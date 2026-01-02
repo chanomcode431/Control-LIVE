@@ -134,13 +134,18 @@
 
                     if (data.mode === 'stop') {
                         stopTimer();
-                        timerEl.innerText = "STOP"; 
+                        timerEl.innerText = "RESET"; // เปลี่ยนคำเป็น RESET
                         timerEl.className = "stopped"; 
                         timerEl.style.fontSize = "80px";
                         timerEl.classList.remove("hidden"); 
 
+                        // --- [ส่วนที่เพิ่ม] ตั้งเวลา 2 วิแล้วหายไป ---
+                        fadeTimeout = setTimeout(() => {
+                            timerEl.classList.add("hidden");
+                        }, 2000); 
+
                     } else if (data.mode === 'text') {
-                        // --- [เพิ่ม] ส่วนแสดงข้อความ ---
+                        // --- ส่วนแสดงข้อความ ---
                         showTextMessage(data.message);
 
                     } else if (data.mode === 'running') {
@@ -161,11 +166,11 @@
             timerEl.classList.add("text-message");
             timerEl.classList.remove("hidden");
 
-            // --- [จุดแก้เวลาข้อความหาย] ---
+            // --- ตั้งเวลาข้อความหาย (5 วินาที) ---
             fadeTimeout = setTimeout(() => {
                 timerEl.classList.remove("text-message");
                 timerEl.classList.add("hidden");
-            }, 950); // 5000 = 5 วินาที
+            }, 5000); 
         }
 
         // --- ฟังก์ชันจับเวลา ---
@@ -200,7 +205,7 @@
                         // --- สั่งรอ 2 วินาที แล้วค่อยหายไป ---
                         fadeTimeout = setTimeout(() => {
                             timerEl.classList.add("hidden"); 
-                        }, 2000); // 2 วินาทีหลังจากนับจบ
+                        }, 2000); 
                         
                     } else {
                         const secondsLeft = Math.ceil(diff / 1000);
@@ -221,6 +226,7 @@
             timerInterval = null;
         }
 
+        // ฟังก์ชันยกเลิกการรอหายตัว (ป้องกันบั๊กเวลากดปุ่มรัวๆ)
         function clearFade() {
             if (fadeTimeout) {
                 clearTimeout(fadeTimeout);
@@ -231,5 +237,3 @@
     </script>
 </body>
 </html>
-
-
