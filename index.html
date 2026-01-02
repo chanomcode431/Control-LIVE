@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stream Command Center</title>
+    <title>Stream Control Deck (Pro Version)</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Chakra+Petch:wght@400;600&family=Kanit:wght@300;400;600&family=Orbitron:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Chakra+Petch:wght@600&family=Kanit:wght@300;600&family=Orbitron:wght@700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -14,456 +14,499 @@
     
     <style>
         :root {
-            --bg-main: #0f172a;
-            --bg-panel: #1e293b;
-            --primary: #10b981; /* Green */
-            --primary-hover: #059669;
-            --accent: #3b82f6; /* Blue */
-            --danger: #ef4444;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
+            --bg-dark: #121212;
+            --bg-card: #1e1e1e;
+            --bg-sidebar: #181818;
+            --primary: #00e676;
+            --danger: #ff5252;
+            --text-main: #ffffff;
+            --text-muted: #b0bec5;
+            --accent-blue: #2979ff;
+            --accent-orange: #ff9100;
+            --admin-purple: #d500f9;
         }
 
         * { box-sizing: border-box; }
+        
+        /* Global Font Defaults */
+        body, input, button, select, textarea { 
+            font-family: 'Kanit', sans-serif; 
+        }
+
+        /* Digital Font Style (For Timer) */
+        .digital-font {
+            font-family: 'Black Ops One', cursive; /* Default */
+            font-size: 70px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
         body { 
             margin: 0; padding: 0; 
-            background-color: var(--bg-main); 
-            color: var(--text-main); 
-            font-family: 'Kanit', sans-serif; 
+            background: var(--bg-dark); 
+            color: var(--text-main);
             height: 100vh; 
             display: flex; 
             overflow: hidden;
         }
 
-        /* --- UI UTILS --- */
+        /* --- UI COMPONENTS --- */
         .hide-box { display: none !important; }
         .hidden { opacity: 0 !important; }
-        .flex-center { display: flex; align-items: center; justify-content: center; }
 
-        /* --- LOGIN --- */
+        /* Login */
         #login-overlay {
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(10px); z-index: 2000;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+            display: flex; justify-content: center; align-items: center; z-index: 2000;
+            backdrop-filter: blur(5px);
         }
-        .login-card {
-            background: var(--bg-panel); padding: 40px; border-radius: 20px;
-            width: 100%; max-width: 400px; text-align: center;
-            border: 1px solid var(--border); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        .login-box {
+            background: var(--bg-card); padding: 40px; border-radius: 20px;
+            width: 100%; max-width: 350px; text-align: center; 
+            border: 1px solid #333; box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
-        .login-card h2 { margin-top: 0; color: var(--primary); font-family: 'Orbitron'; letter-spacing: 2px; }
 
-        /* --- SIDEBAR --- */
-        .sidebar {
-            width: 260px; background: var(--bg-panel); border-right: 1px solid var(--border);
-            padding: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 10;
+        /* User Info */
+        .user-info-top {
+            position: fixed; top: 15px; right: 20px; font-size: 12px;
+            background: rgba(30,30,30,0.9); padding: 8px 15px; border-radius: 20px;
+            display: flex; align-items: center; gap: 10px; z-index: 1500; 
+            border: 1px solid #444; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .brand {
-            font-family: 'Orbitron', sans-serif; font-size: 22px; color: var(--text-main);
-            margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+
+        /* Sidebar */
+        .sidebar { 
+            width: 260px; background: var(--bg-sidebar); border-right: 1px solid #333; 
+            padding: 20px; display: flex; flex-direction: column; gap: 15px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3); z-index: 10;
         }
-        .brand i { color: var(--primary); }
+        .brand { font-size: 20px; font-weight: 600; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .menu-label { font-size: 12px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
         
-        .menu-header { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 15px 0 5px 0; font-weight: 600; }
+        .game-btn {
+            padding: 12px 15px; border-radius: 8px; background: transparent; color: var(--text-muted);
+            cursor: pointer; font-size: 16px; transition: all 0.2s ease;
+            display: flex; align-items: center; gap: 12px; border: 1px solid transparent;
+        }
+        .game-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .game-btn.active { background: rgba(0, 230, 118, 0.15); color: var(--primary); border: 1px solid rgba(0, 230, 118, 0.3); font-weight: 600; }
         
-        .nav-btn {
-            padding: 12px 15px; border-radius: 10px; cursor: pointer;
-            color: var(--text-muted); transition: all 0.2s; font-weight: 500;
-            display: flex; align-items: center; gap: 12px;
-        }
-        .nav-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-        .nav-btn.active {
-            background: rgba(16, 185, 129, 0.15); color: var(--primary);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-        }
-        .nav-btn.admin-mode.active {
-            background: rgba(59, 130, 246, 0.15); color: var(--accent);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-        }
+        .admin-section { margin-top: auto; border-top: 1px solid #333; padding-top: 20px; }
+        .admin-btn { border: 1px dashed var(--accent-blue) !important; color: var(--accent-blue) !important; }
+        .admin-btn.active { background: rgba(41, 121, 255, 0.15); color: white !important; }
+        .my-room-btn { border: 1px solid var(--primary) !important; color: var(--primary) !important; margin-bottom: 10px; }
+        .my-room-btn:hover { background: rgba(0, 230, 118, 0.1) !important; }
 
-        /* --- MAIN AREA --- */
-        .main-content { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; position: relative; }
+        /* Main Content */
+        .main-content { flex: 1; display: flex; flex-direction: column; padding: 30px; overflow-y: auto; align-items: center; }
+        .dashboard-card { background: var(--bg-card); border-radius: 20px; padding: 40px; width: 100%; max-width: 600px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+        /* Admin Grid */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; width: 100%; }
+        .room-card { 
+            background: #151515; border: 1px solid #333; border-radius: 12px; padding: 15px; 
+            text-align: left; transition: transform 0.2s; position: relative; overflow: hidden;
+        }
+        .room-card:hover { border-color: var(--accent-blue); transform: translateY(-3px); }
+        .btn-mini { padding: 6px 12px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer; margin-right: 5px; font-weight: 600; letter-spacing: 0.5px; }
+
+        /* Controls */
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        #timer-container { background: #000; border: 4px solid #333; border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
         
-        .control-card {
-            background: rgba(30, 41, 59, 0.6); border: 1px solid var(--border);
-            border-radius: 24px; padding: 30px; width: 100%; max-width: 750px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3); position: relative;
+        #preview-display { 
+            color: white; text-align: center; 
         }
 
-        /* Header Area */
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .game-title { font-size: 24px; font-weight: 600; color: white; margin: 0; }
-        .game-title span { color: var(--primary); font-family: 'Orbitron'; }
-
-        /* Settings Button */
-        .settings-trigger {
-            background: rgba(255,255,255,0.05); color: var(--text-muted);
-            width: 40px; height: 40px; border-radius: 12px; cursor: pointer;
-            transition: 0.3s; border: 1px solid var(--border);
-        }
-        .settings-trigger:hover { background: var(--bg-panel); color: white; transform: rotate(45deg); }
-
-        /* Settings Dropdown */
-        .settings-dropdown {
-            position: absolute; top: 75px; right: 30px; width: 280px;
-            background: #1e293b; border: 1px solid var(--border); border-radius: 16px;
-            padding: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); z-index: 100;
-            animation: slideDown 0.2s ease-out;
-        }
-        @keyframes slideDown { from{opacity:0; transform:translateY(-10px);} to{opacity:1; transform:translateY(0);} }
+        .control-group { margin-bottom: 20px; text-align: center; }
+        .custom-input { background: #2a2a2a; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; outline: none; font-size: 14px; transition: 0.3s; width:100%; }
+        .custom-input:focus { border-color: var(--primary); }
         
-        .setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; }
-        .setting-item:last-child { margin-bottom: 0; }
-        .st-label { color: #cbd5e1; display: flex; align-items: center; gap: 8px; }
-        
-        /* Inputs & Selects */
-        .modern-select, .modern-input {
-            background: #0f172a; border: 1px solid var(--border); color: white;
-            padding: 6px 10px; border-radius: 8px; font-size: 12px; outline: none;
+        input[type="number"] { background: #2a2a2a; border: 2px solid #444; color: white; font-size: 36px; width: 100%; max-width: 200px; text-align: center; padding: 10px; border-radius: 12px; outline: none; }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 20px; }
+        button { flex: 1; padding: 18px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; color: white; text-transform: uppercase; }
+        .btn-start { background: linear-gradient(135deg, #00e676, #00b359); box-shadow: 0 4px 15px rgba(0,230,118,0.3); }
+        .btn-reset { background: #333; color: #ff5252; border: 1px solid #ff5252; }
+        .btn-send { background: linear-gradient(135deg, #2979ff, #1565c0); }
+
+        /* AHK Box */
+        .ahk-box { background: rgba(255, 145, 0, 0.1); border: 1px solid var(--accent-orange); border-radius: 12px; padding: 15px; margin-top: 15px; text-align: left; }
+
+        /* --- SETTINGS BOX (NEW) --- */
+        .settings-box {
+            display: flex; flex-direction: column; gap: 15px;
+            background: #252525; border: 1px solid #444; border-radius: 12px;
+            padding: 15px; margin-bottom: 20px;
         }
-        .modern-input { width: 60px; text-align: center; }
-
-        /* Toggle Switch */
-        .toggle { width: 40px; height: 22px; background: var(--border); border-radius: 20px; position: relative; cursor: pointer; transition: 0.3s; }
-        .toggle.on { background: var(--primary); }
-        .toggle::after { content:''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: 0.3s; }
-        .toggle.on::after { left: 21px; }
-
-        /* --- PREVIEW MONITOR --- */
-        .monitor-frame {
-            background: #000; border-radius: 16px; padding: 5px;
-            box-shadow: 0 0 0 2px #334155, 0 20px 40px rgba(0,0,0,0.5);
-            margin-bottom: 30px;
-        }
-        .monitor-screen {
-            background: #050505; border-radius: 12px; height: 180px;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden; position: relative;
-        }
-        .monitor-label { position: absolute; top: 10px; left: 15px; font-size: 10px; color: #444; font-weight: bold; letter-spacing: 2px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; }
         
-        #preview-display { color: white; text-align: center; width: 100%; transition: color 0.3s; }
-        .digital-font { font-family: 'Black Ops One', cursive !important; font-size: 80px; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
-        .text-mode-font { font-family: 'Kanit', sans-serif !important; font-size: 36px; font-weight: 600; color: var(--accent); }
-
-        /* --- ACTION CONTROLS --- */
-        .input-group { position: relative; margin-bottom: 20px; }
-        .big-input {
-            width: 100%; background: #0f172a; border: 2px solid var(--border);
-            border-radius: 16px; padding: 15px; font-size: 32px; color: white;
-            text-align: center; font-weight: bold; font-family: 'Chakra Petch';
-            outline: none; transition: 0.3s;
+        /* Sound Toggle Switch */
+        .sound-toggle-btn {
+            background: #444; width: 50px; height: 26px; border-radius: 13px;
+            position: relative; cursor: pointer; transition: 0.3s;
         }
-        .big-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); }
-        
-        .textarea-input { font-size: 18px; text-align: left; font-family: 'Kanit'; resize: none; }
-
-        .btn-row { display: flex; gap: 15px; }
-        .btn-action {
-            flex: 1; padding: 16px; border: none; border-radius: 14px;
-            font-size: 16px; font-weight: 700; cursor: pointer; color: white;
-            text-transform: uppercase; letter-spacing: 1px; transition: 0.2s;
+        .sound-toggle-btn.on { background: var(--primary); }
+        .sound-toggle-circle {
+            width: 20px; height: 20px; background: white; border-radius: 50%;
+            position: absolute; top: 3px; left: 3px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-        .btn-action:active { transform: scale(0.97); }
+        .sound-toggle-btn.on .sound-toggle-circle { left: 27px; }
         
-        .btn-green { background: var(--primary); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
-        .btn-green:hover { background: var(--primary-hover); }
+        /* Small Inputs */
+        .sm-input { width: 60px; font-size: 14px; padding: 5px; height: 35px; border: 1px solid #555; background: #1a1a1a; text-align: center; color: white; border-radius: 5px;}
+        .sm-select { background: #1a1a1a; border: 1px solid #555; color: #ccc; padding: 5px; height: 35px; border-radius: 5px; cursor: pointer; font-size: 13px;}
+
+        /* Animation */
+        .preview-intro { color: #ffd700 !important; font-size: 36px !important; }
+        .preview-panic { color: #ff0000 !important; animation: panic-pulse 0.5s infinite; }
+        @keyframes panic-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         
-        .btn-red { background: #334155; color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
-        .btn-red:hover { background: rgba(239, 68, 68, 0.1); border-color: var(--danger); }
-        
-        .btn-blue { background: var(--accent); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); }
-
-        /* --- FOOTER --- */
-        .footer-tools { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); }
-        .copy-row { display: flex; background: #0f172a; border-radius: 10px; border: 1px solid var(--border); padding: 5px; align-items: center; margin-top: 5px; }
-        .copy-input { background: transparent; border: none; color: #94a3b8; flex: 1; padding: 5px 10px; font-size: 12px; outline: none; }
-        .copy-btn { background: #334155; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 10px; cursor: pointer; }
-        .copy-btn:hover { background: #475569; }
-
-        .reset-link-btn {
-            margin-top: 15px; border: 1px dashed #475569; color: #64748b;
-            padding: 10px; border-radius: 10px; text-align: center; font-size: 12px;
-            cursor: pointer; transition: 0.2s;
-        }
-        .reset-link-btn:hover { color: var(--danger); border-color: var(--danger); background: rgba(239, 68, 68, 0.05); }
-
-        /* --- ADMIN MODAL --- */
-        .hijack-modal { background: #1e293b; width: 450px; border-radius: 20px; border: 1px solid var(--accent); overflow: hidden; }
-        .hijack-header { background: var(--accent); color: white; padding: 15px 20px; font-weight: 600; display: flex; justify-content: space-between; }
-        .close-modal { background: rgba(0,0,0,0.2); border: none; color: white; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; }
-        .mode-tags { display: flex; justify-content: center; gap: 5px; margin-bottom: 20px; }
-        .tag-btn { background: #0f172a; border: 1px solid var(--border); color: #94a3b8; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
-        .tag-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(59, 130, 246, 0.1); }
-
-        /* Animations */
-        .preview-intro { color: #facc15 !important; font-size: 32px !important; }
-        .preview-panic { color: #ef4444 !important; animation: panic 0.5s infinite; }
-        @keyframes panic { 0% {transform: scale(1);} 50% {transform: scale(1.1);} 100% {transform: scale(1);} }
+        .status-badge-my { background: rgba(0, 230, 118, 0.2); color: var(--primary); padding: 5px 10px; border-radius: 10px; font-size: 12px; border: 1px solid var(--primary); }
+        .status-badge-hijack { background: rgba(213, 0, 249, 0.2); color: var(--admin-purple); padding: 5px 10px; border-radius: 10px; font-size: 12px; border: 1px solid var(--admin-purple); }
     </style>
 </head>
 <body>
 
-    <div id="login-overlay" class="flex-center">
-        <div class="login-card">
-            <h2>SYSTEM ACCESS</h2>
-            <div style="margin-bottom:20px; color:var(--text-muted); font-size:13px;">Please authenticate</div>
-            <input type="email" id="email" class="modern-input" placeholder="Email" style="width:100%; text-align:center; padding:12px; font-size:16px; margin-bottom:10px;">
-            <input type="password" id="password" class="modern-input" placeholder="Password" style="width:100%; text-align:center; padding:12px; font-size:16px; margin-bottom:20px;">
-            <button onclick="handleLogin()" class="btn-action btn-green">LOGIN</button>
-            <p id="login-error" style="color:var(--danger); font-size:12px; margin-top:15px;"></p>
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="color: var(--primary); margin-top:0;"><i class="fas fa-shield-alt"></i> SYSTEM LOGIN</h2>
+            <input type="email" id="email" class="custom-input" placeholder="Email" style="text-align: center; margin-bottom: 10px;">
+            <input type="password" id="password" class="custom-input" placeholder="Password" style="text-align: center; margin-bottom: 20px;" onkeyup="if(event.key === 'Enter') handleLogin()">
+            <button onclick="handleLogin()" style="background: var(--primary); color: #000; width: 100%; font-weight: bold; border-radius: 8px;">LOGIN</button>
+            <p id="login-error" style="color: var(--danger); font-size: 13px; margin-top: 15px;"></p>
         </div>
     </div>
 
+    <div id="user-display" class="user-info-top hide-box">
+        <span id="role-badge" style="font-size: 10px; background: var(--accent-blue); padding: 2px 8px; border-radius: 10px; font-weight: bold;">USER</span>
+        <span id="display-email" style="color: #ddd;"></span>
+        <i class="fas fa-sign-out-alt" style="color: var(--danger); cursor: pointer; margin-left: 10px;" onclick="handleLogout()" title="Logout"></i>
+    </div>
+
     <div class="sidebar">
-        <div class="brand"><i class="fas fa-gamepad"></i> STiMEXs <span style="font-size:10px; opacity:0.5; background:white; color:black; padding:2px 4px; border-radius:4px;">PRO</span></div>
-        
-        <div class="menu-header">GAME CONTROLS</div>
-        <div class="nav-btn active" onclick="selectGame('Roblox', 60, this)"><i class="fas fa-cube"></i> Roblox</div>
-        <div class="nav-btn" onclick="selectGame('OnlyUp', 10, this)"><i class="fas fa-arrow-up"></i> OnlyUp</div>
-        <div class="nav-btn" onclick="selectGame('Horror', 60, this)"><i class="fas fa-ghost"></i> Horror</div>
-        <div class="nav-btn" onclick="selectGame('Talk', 0, this)"><i class="fas fa-comment-dots"></i> Talk / Chat</div>
-        
-        <div id="admin-menu" class="hide-box">
-            <div class="menu-header">ADMINISTRATION</div>
-            <div class="nav-btn my-room-btn" onclick="switchToMyRoom()"><i class="fas fa-user-astronaut"></i> My Control</div>
-            <div class="nav-btn admin-mode" onclick="showAdminPanel()"><i class="fas fa-users-cog"></i> Active Rooms</div>
+        <div class="brand"><i class="fas fa-gamepad"></i> STiMEXs <span style="font-size:10px; opacity:0.5;">v4.0</span></div>
+        <div>
+            <div class="menu-label">เลือกโหมดเกม</div>
+            <div class="game-btn active" onclick="selectGame('Roblox', 60, this)"><i class="fas fa-cube"></i> Roblox</div>
+            <div class="game-btn" onclick="selectGame('OnlyUp', 10, this)"><i class="fas fa-arrow-up"></i> OnlyUp</div>
+            <div class="game-btn" onclick="selectGame('Horror', 60, this)"><i class="fas fa-ghost"></i> Horror</div>
+            <div class="game-btn" onclick="selectGame('Talk', 0, this)"><i class="fas fa-comment-dots"></i> Talk / Chat</div>
         </div>
         
-        <div style="margin-top:auto; font-size:11px; color:#64748b; text-align:center; padding-top:15px; border-top:1px solid var(--border);">
-            <div style="margin-bottom:5px;" id="display-email">Guest</div>
-            <span style="color:var(--danger); cursor:pointer;" onclick="handleLogout()">LOGOUT</span>
+        <div id="admin-menu" class="admin-section hide-box">
+            <div class="menu-label">ADMIN SYSTEM</div>
+            <div id="btn-my-room" class="game-btn my-room-btn" onclick="switchToMyRoom()">
+                <i class="fas fa-user-astronaut"></i> My Control
+            </div>
+            <div id="btn-admin-view" class="game-btn admin-btn" onclick="showAdminPanel()">
+                <i class="fas fa-users-cog"></i> Active Rooms
+            </div>
         </div>
     </div>
 
     <div class="main-content">
         
-        <div id="admin-panel-view" class="control-card hide-box" style="max-width:900px;">
-            <div class="card-header">
-                <h2 style="color:var(--accent); margin:0;">ACTIVE ROOMS</h2>
-                <button class="btn-red" style="padding:8px 15px; width:auto; border-radius:8px; font-size:12px;" onclick="loadRooms()">REFRESH</button>
+        <div id="admin-panel-view" class="dashboard-card hide-box" style="max-width: 900px; width: 100%;">
+            <div class="header-row">
+                <h2 style="color: var(--accent-blue); margin: 0;"><i class="fas fa-satellite-dish"></i> Active Rooms Monitor</h2>
+                <button class="btn-mini" style="width: auto; background: #333;" onclick="loadRooms()">REFRESH</button>
             </div>
-            <div id="room-list" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:15px;"></div>
+            <div class="room-grid" id="room-list"></div>
         </div>
 
-        <div id="control-panel-view" class="control-card">
-            
-            <div class="card-header">
-                <h2 class="game-title">MODE: <span id="gameTitle">ROBLOX</span></h2>
-                <div class="settings-trigger flex-center" onclick="toggleSettings()"><i class="fas fa-cog"></i></div>
+        <div id="control-panel-view" class="dashboard-card">
+            <div class="header-row">
+                <div class="header-title"><h1>โหมด: <span id="gameTitle">Roblox</span></h1></div>
+                <div id="target-info"></div>
             </div>
 
-            <div id="settings-menu" class="settings-dropdown hide-box">
-                <div style="font-weight:600; margin-bottom:10px; color:white;">Preferences</div>
-                
-                <div class="setting-item">
-                    <span class="st-label"><i class="fas fa-volume-up"></i> Sound Effect</span>
-                    <div id="sound-toggle" class="toggle" onclick="toggleSound()"></div>
-                </div>
-                
-                <div class="setting-item">
-                    <span class="st-label">Sound Type</span>
-                    <select id="sound-type" class="modern-select" onchange="if(isSoundOn) playSoundEffect()">
-                        <option value="classic">Classic</option>
-                        <option value="high">High Pitch</option>
-                        <option value="8bit">8-Bit</option>
-                        <option value="low">Low Alert</option>
-                        <option value="soft">Soft Bell</option>
-                    </select>
-                </div>
-
-                <div class="setting-item">
-                    <span class="st-label">Warn at (sec)</span>
-                    <input type="number" id="sound-sec-start" value="10" class="modern-input">
-                </div>
-
-                <div style="border-top:1px solid var(--border); margin:10px 0;"></div>
-
-                <div class="setting-item">
-                    <span class="st-label"><i class="fas fa-font"></i> Font Style</span>
-                    <select id="font-select" class="modern-select" onchange="changeGlobalFont()">
-                        <option value="'Black Ops One', cursive">Black Ops One</option>
-                        <option value="'Kanit', sans-serif">Kanit (ไทย)</option>
-                        <option value="'Orbitron', sans-serif">Orbitron</option>
-                        <option value="'Chakra Petch', sans-serif">Chakra Petch</option>
-                        <option value="'Press Start 2P', cursive">Pixel</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="monitor-frame">
-                <div class="monitor-screen">
-                    <div class="monitor-label">LIVE PREVIEW</div>
-                    <div id="preview-display" class="digital-font">60</div>
-                </div>
+            <div class="control-label" style="text-align: left; margin-bottom: 5px;">LIVE PREVIEW</div>
+            <div id="timer-container">
+                <div id="preview-display" class="digital-font">60</div>
             </div>
 
             <div id="control-wrapper">
-                
-                <div id="timer-controls">
-                    <div class="input-group">
-                        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">SET DURATION</label>
-                        <input type="number" id="sec" value="60" class="big-input" onchange="updatePreviewStatic()">
-                    </div>
+                <div id="timer-controls" class="control-group">
                     
-                    <div class="btn-row">
-                        <button class="btn-action btn-red" onclick="handleReset()"><i class="fas fa-stop"></i> RESET (R)</button>
-                        <button class="btn-action btn-green" onclick="handleStart()"><i class="fas fa-play"></i> START (Space)</button>
+                    <div class="settings-box">
+                        <div class="setting-row" style="margin-bottom: 10px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div id="sound-toggle" class="sound-toggle-btn" onclick="toggleSound()">
+                                    <div class="sound-toggle-circle"></div>
+                                </div>
+                                <div style="font-size:14px; font-weight:600; color:#ddd;">
+                                    <i class="fas fa-volume-up"></i> Sound
+                                </div>
+                            </div>
+                            
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <select id="sound-type" class="sm-select" onchange="previewSound()">
+                                    <option value="classic">Classic</option>
+                                    <option value="high">High Pitch</option>
+                                    <option value="8bit">8-Bit</option>
+                                    <option value="low">Low Alert</option>
+                                    <option value="soft">Soft Bell</option>
+                                </select>
+                                <span style="font-size:12px; color:#aaa;">เตือน:</span>
+                                <input type="number" id="sound-sec-start" value="10" class="sm-input">
+                            </div>
+                        </div>
+
+                        <div class="setting-row">
+                            <div style="font-size:14px; font-weight:600; color:#ddd;">
+                                <i class="fas fa-font"></i> Font
+                            </div>
+                            <select id="font-select" class="sm-select" style="flex:1; margin-left:10px;" onchange="changeGlobalFont()">
+                                <option value="'Black Ops One', cursive">Black Ops One (Default)</option>
+                                <option value="'Kanit', sans-serif">Kanit (ไทย)</option>
+                                <option value="'Orbitron', sans-serif">Orbitron (Sci-Fi)</option>
+                                <option value="'Chakra Petch', sans-serif">Chakra Petch (Tech)</option>
+                                <option value="'Press Start 2P', cursive">Pixel (8-Bit)</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div id="ahk-section" class="hide-box" style="margin-top:20px; background:rgba(249, 115, 22, 0.1); border:1px solid rgba(249, 115, 22, 0.3); padding:10px; border-radius:10px;">
-                        <div style="font-size:11px; color:#fdba74; margin-bottom:5px; font-weight:bold;">AHK Room ID</div>
-                        <div class="copy-row" style="border-color:rgba(249, 115, 22, 0.3);">
-                            <input type="text" id="onlyUpRoomId" readonly class="copy-input" style="color:#fdba74;">
-                            <button class="copy-btn" onclick="copyId()" style="background:rgba(249, 115, 22, 0.8);">COPY</button>
+                    <div class="control-label">ตั้งเวลา (วินาที)</div>
+                    <input type="number" id="sec" value="60" onchange="updatePreviewStatic()">
+                    
+                    <div class="btn-group">
+                        <button class="btn-reset" onclick="handleReset()"><i class="fas fa-stop"></i> Reset (R)</button>
+                        <button class="btn-start" onclick="handleStart()"><i class="fas fa-play"></i> START (Space)</button>
+                    </div>
+
+                    <div id="ahk-section" class="ahk-box hide-box">
+                        <div style="color: var(--accent-orange); font-size: 14px; font-weight: 600; margin-bottom: 8px;">
+                            <i class="fas fa-robot"></i> Room ID for AutoHotkey
+                        </div>
+                        <div style="display: flex; background: #121212; padding: 5px; border-radius: 8px; border: 1px solid #333; align-items: center;">
+                            <input type="text" id="onlyUpRoomId" style="flex: 1; background: transparent; border: none; color: #aaa; padding: 8px; font-size: 12px; outline: none;" readonly>
+                            <button class="btn-mini" style="background: var(--accent-orange); color: black;" onclick="copyId()">COPY</button>
                         </div>
                     </div>
                 </div>
 
-                <div id="text-controls" class="hide-box">
-                    <div class="input-group">
-                        <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:5px;">MESSAGE</label>
-                        <textarea id="textMsg" rows="2" class="big-input textarea-input" placeholder="พิมพ์ข้อความ..."></textarea>
-                    </div>
-                    <button class="btn-action btn-blue" style="width:100%;" onclick="handleSendText()"><i class="fas fa-paper-plane"></i> SEND TO SCREEN</button>
+                <div id="text-controls" class="control-group hide-box">
+                    <textarea id="textMsg" rows="2" placeholder="พิมพ์ข้อความที่นี่..." class="custom-input"></textarea>
+                    <button class="btn-send" onclick="handleSendText()" style="width:100%; margin-top:15px;">
+                        <i class="fas fa-paper-plane"></i> ส่งขึ้นจอ
+                    </button>
                 </div>
 
-                <div class="footer-tools">
-                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:5px; font-weight:600;">OBS OVERLAY LINK</div>
-                    <div class="copy-row">
-                        <input type="text" id="overlayLink" readonly class="copy-input">
-                        <button class="copy-btn" onclick="copyLink()">COPY</button>
-                    </div>
-                    <div class="reset-link-btn" onclick="handleResetLink()">
-                        <i class="fas fa-sync-alt"></i> สร้างห้องใหม่ / รีเซ็ตลิ้งค์ (Generate New Room)
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #333;">
+                    <div class="control-label" style="font-size: 12px; text-align: left;">🔗 Overlay Link (OBS)</div>
+                    <div style="display: flex; background: #121212; padding: 5px; border-radius: 8px; border: 1px solid #333; align-items: center;">
+                        <input type="text" id="overlayLink" style="flex: 1; background: transparent; border: none; color: #aaa; padding: 8px; font-size: 12px; outline: none;" readonly>
+                        <button class="btn-mini" style="background: #333; color: white;" onclick="copyLink()">COPY</button>
                     </div>
                 </div>
-
-            </div>
-        </div>
-    </div>
-
-    <div id="hijack-overlay" class="overlay-backdrop flex-center hide-box">
-        <div class="hijack-modal">
-            <div class="hijack-header">
-                <span>REMOTE CONTROL</span>
-                <button class="close-modal" onclick="closeHijackModal()">×</button>
-            </div>
-            <div class="hijack-body">
-                <div style="background:#0f172a; padding:15px; border-radius:10px; margin-bottom:20px; border:1px solid var(--border);">
-                    <div id="hijack-preview" class="digital-font" style="font-size:40px; color:white;">READY</div>
-                </div>
-                
-                <div class="mode-tags">
-                    <div class="tag-btn active" onclick="selectHijackGame('Roblox', this)">Roblox</div>
-                    <div class="tag-btn" onclick="selectHijackGame('OnlyUp', this)">OnlyUp</div>
-                    <div class="tag-btn" onclick="selectHijackGame('Talk', this)">Talk</div>
-                </div>
-
-                <div id="hijack-timer-inputs">
-                    <input type="number" id="hijack-sec" class="big-input" value="60" style="font-size:24px; padding:10px; margin-bottom:20px;">
-                </div>
-                <div id="hijack-text-inputs" class="hide-box">
-                    <textarea id="hijack-msg" class="big-input textarea-input" rows="2" placeholder="Message..." style="font-size:16px; margin-bottom:20px;"></textarea>
-                </div>
-
-                <div class="btn-row">
-                    <button class="btn-action btn-red" onclick="hijackReset()">STOP</button>
-                    <button class="btn-action btn-blue" onclick="hijackStart()">SEND</button>
-                </div>
-                <div id="hijack-target-email" style="font-size:11px; color:var(--text-muted); margin-top:15px;"></div>
             </div>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyDgn9Vll-qcLhw7dcNtA9oGKy_BCRuefIs", authDomain: "control-tiktok.firebaseapp.com", databaseURL: "https://control-tiktok-default-rtdb.firebaseio.com", projectId: "control-tiktok", storageBucket: "control-tiktok.firebasestorage.app", messagingSenderId: "771700169818", appId: "1:771700169818:web:abe98c40c5b1baabab0c63" };
+        // CONFIG
+        const ADMIN_UID = "kReiv2Nvp6MbQXiiuyGzsG9xb6c2"; 
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgn9Vll-qcLhw7dcNtA9oGKy_BCRuefIs",
+            authDomain: "control-tiktok.firebaseapp.com",
+            databaseURL: "https://control-tiktok-default-rtdb.firebaseio.com",
+            projectId: "control-tiktok",
+            storageBucket: "control-tiktok.firebasestorage.app",
+            messagingSenderId: "771700169818",
+            appId: "1:771700169818:web:abe98c40c5b1baabab0c63"
+        };
+
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         const auth = firebase.auth();
-        const ADMIN_UID = "kReiv2Nvp6MbQXiiuyGzsG9xb6c2";
 
-        let myRoomId = "", currentRoomId = "", hijackRoomId = "";
-        let isAdmin = false, isTextMode = false;
-        let previewInterval = null, currentHijackGame = 'Roblox';
+        // Variables
+        let myPersonalRoomId = "";
+        let currentRoomId = "";
+        let isAdmin = false;
+        let previewInterval = null;
+        let previewTimeout = null;
+        let isTextMode = false;
         
+        // --- NEW VARIABLES FOR SETTINGS ---
         let selectedFont = "'Black Ops One', cursive";
         let isSoundOn = false;
         let soundStartAt = 10;
-        let lastPlayedSec = -1;
+        let lastPlayedSec = -1; // เพื่อกันเสียงเล่นซ้ำในวิเดิม
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+        // --- SOUND SYSTEM ---
+        function playBeep(freq, type, dur, vol) {
+            if (!isSoundOn) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); 
+            gain.connect(audioCtx.destination);
+            
+            osc.type = type; 
+            osc.frequency.value = freq;
+            
+            const now = audioCtx.currentTime;
+            gain.gain.setValueAtTime(vol, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
+            
+            osc.start(now);
+            osc.stop(now + dur);
+        }
+
+        function playSoundEffect() {
+            // Resume Context if suspended (browser policy)
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+
+            const soundType = document.getElementById('sound-type').value;
+
+            switch(soundType) {
+                case 'classic': playBeep(440, 'sine', 0.1, 0.5); break; 
+                case 'high': playBeep(880, 'triangle', 0.1, 0.4); break; 
+                case '8bit': playBeep(220, 'square', 0.1, 0.3); break; 
+                case 'low': playBeep(150, 'sawtooth', 0.2, 0.3); break; 
+                case 'soft': playBeep(600, 'sine', 0.3, 0.3); break; 
+            }
+        }
+
+        function toggleSound() {
+            isSoundOn = !isSoundOn;
+            const btn = document.getElementById('sound-toggle');
+            if (isSoundOn) {
+                btn.classList.add('on');
+                playSoundEffect(); // Play once to confirm
+            } else {
+                btn.classList.remove('on');
+            }
+        }
+
+        function previewSound() {
+            if(isSoundOn) playSoundEffect();
+        }
+
+        // --- FONT SYSTEM ---
+        function changeGlobalFont() {
+            selectedFont = document.getElementById('font-select').value;
+            // Apply to local preview immediately
+            if(!isTextMode) {
+                document.getElementById('preview-display').style.fontFamily = selectedFont;
+            }
+        }
+
+        // --- AUTH ---
         auth.onAuthStateChanged(user => {
             if (user) {
                 document.getElementById('login-overlay').classList.add('hide-box');
+                document.getElementById('user-display').classList.remove('hide-box');
                 document.getElementById('display-email').innerText = user.email;
-                let suffix = localStorage.getItem('room_s_' + user.uid) || Math.floor(1000 + Math.random() * 9000);
-                localStorage.setItem('room_s_' + user.uid, suffix);
-                myRoomId = `room_${user.uid.substring(0, 8)}_${suffix}`;
-                database.ref(myRoomId).update({ email: user.email, lastOnline: Date.now() });
-
+                myPersonalRoomId = `room_${user.uid.substring(0, 8)}`;
                 if (user.uid === ADMIN_UID) {
                     isAdmin = true;
                     document.getElementById('admin-menu').classList.remove('hide-box');
-                    loadRooms();
+                    document.getElementById('role-badge').innerText = "ADMIN MASTER";
+                    document.getElementById('role-badge').style.background = "#d500f9"; 
+                    loadRooms(); showAdminPanel(); 
+                } else {
+                    isAdmin = false;
+                    document.getElementById('admin-menu').classList.add('hide-box');
+                    switchToMyRoom();
                 }
-                switchToMyRoom();
             } else {
                 document.getElementById('login-overlay').classList.remove('hide-box');
+                document.getElementById('user-display').classList.add('hide-box');
+                document.getElementById('admin-menu').classList.add('hide-box');
             }
         });
 
         function handleLogin() {
-            auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('password').value)
-                .catch(e => document.getElementById('login-error').innerText = e.message);
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            auth.signInWithEmailAndPassword(e, p).catch(err => document.getElementById('login-error').innerText = err.message);
         }
         function handleLogout() { auth.signOut().then(() => location.reload()); }
 
-        function toggleSettings() { document.getElementById('settings-menu').classList.toggle('hide-box'); }
-        function toggleSound() {
-            isSoundOn = !isSoundOn;
-            const btn = document.getElementById('sound-toggle');
-            if(isSoundOn) { btn.classList.add('on'); playSoundEffect(); }
-            else { btn.classList.remove('on'); }
-        }
-        function changeGlobalFont() {
-            selectedFont = document.getElementById('font-select').value;
-            if(!isTextMode) document.getElementById('preview-display').style.fontFamily = selectedFont;
-        }
-        
-        function playBeep(freq, type, dur) {
-            if (!isSoundOn) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.type = type; osc.frequency.value = freq;
-            const now = audioCtx.currentTime;
-            gain.gain.setValueAtTime(0.3, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
-            osc.start(now); osc.stop(now + dur);
-        }
-        function playSoundEffect() {
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            const type = document.getElementById('sound-type').value;
-            switch(type) {
-                case 'classic': playBeep(440, 'sine', 0.1); break;
-                case 'high': playBeep(880, 'triangle', 0.1); break;
-                case '8bit': playBeep(220, 'square', 0.1); break;
-                case 'low': playBeep(150, 'sawtooth', 0.2); break;
-                case 'soft': playBeep(600, 'sine', 0.3); break;
-            }
-        }
-        function previewSound() { if(isSoundOn) playSoundEffect(); }
-
-        function selectGame(name, time, btn) {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            if(btn) btn.classList.add('active');
-            document.getElementById('gameTitle').innerText = name;
-            
+        // --- LOGIC ---
+        function switchToMyRoom() {
+            currentRoomId = myPersonalRoomId;
             document.getElementById('admin-panel-view').classList.add('hide-box');
             document.getElementById('control-panel-view').classList.remove('hide-box');
+            if(isAdmin) document.getElementById('btn-admin-view').classList.remove('active');
+            document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.game-btn')[0].classList.add('active');
+            updateRoomUI();
+            selectGame('Roblox', 60, document.querySelectorAll('.game-btn')[0]);
+        }
 
-            if (name === 'OnlyUp') document.getElementById('ahk-section').classList.remove('hide-box');
+        function showAdminPanel() {
+            document.getElementById('admin-panel-view').classList.remove('hide-box');
+            document.getElementById('control-panel-view').classList.add('hide-box');
+            document.getElementById('btn-admin-view').classList.add('active');
+            document.querySelectorAll('.game-btn').forEach(b => {
+                if(!b.classList.contains('admin-btn') && !b.classList.contains('my-room-btn')) b.classList.remove('active');
+            });
+        }
+
+        function takeControl(id) {
+            currentRoomId = id; 
+            document.getElementById('admin-panel-view').classList.add('hide-box');
+            document.getElementById('control-panel-view').classList.remove('hide-box');
+            document.getElementById('btn-admin-view').classList.remove('active');
+            updateRoomUI();
+            selectGame('Roblox', 60, document.querySelectorAll('.game-btn')[0]);
+        }
+
+        function loadRooms() {
+            if(!isAdmin) return;
+            database.ref().on('value', snapshot => {
+                const rooms = snapshot.val();
+                const list = document.getElementById('room-list');
+                list.innerHTML = '';
+                if (!rooms) return;
+                for (let id in rooms) {
+                    if (id.startsWith('room_')) {
+                        const rData = rooms[id];
+                        const card = document.createElement('div');
+                        card.className = 'room-card';
+                        const isMyRoom = (id === myPersonalRoomId);
+                        if(isMyRoom) card.style.border = "1px solid var(--primary)";
+                        const statusColor = (rData.mode === 'running') ? '#00e676' : '#555';
+                        card.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                <div style="font-size:10px; color:${isMyRoom ? 'var(--primary)' : '#888'};">${isMyRoom ? '★ YOUR ROOM' : 'ID'}</div>
+                                <div style="width:8px; height:8px; border-radius:50%; background:${statusColor};"></div>
+                            </div>
+                            <div style="font-size:14px; color:white; font-weight:bold; overflow:hidden; text-overflow:ellipsis; margin-bottom:5px;">${id}</div>
+                            <div style="font-size:11px; color:#aaa; margin-bottom:10px;">Mode: ${rData.game || '-'} | Status: ${rData.mode || 'Stop'}</div>
+                            <button class="btn-mini" style="width:100%; background:var(--accent-blue); color:white;" onclick="takeControl('${id}')"><i class="fas fa-gamepad"></i> CONTROL</button>
+                        `;
+                        list.appendChild(card);
+                    }
+                }
+            });
+        }
+
+        function updateRoomUI() {
+            const url = window.location.href.split('?')[0].replace('index.html', '').replace('control.html', ''); 
+            const baseUrl = url.endsWith('/') ? url : url + '/';
+            const fullLink = `${baseUrl}overlay.html?id=${currentRoomId}`;
+            document.getElementById('overlayLink').value = fullLink;
+            document.getElementById('onlyUpRoomId').value = currentRoomId; 
+            const tInfo = document.getElementById('target-info');
+            if (currentRoomId === myPersonalRoomId) tInfo.innerHTML = `<span class="status-badge-my"><i class="fas fa-user"></i> MY ROOM</span>`;
+            else tInfo.innerHTML = `<span class="status-badge-hijack"><i class="fas fa-mask"></i> HIJACKING</span>`;
+        }
+
+        function selectGame(name, time, btnElement) {
+            document.getElementById('gameTitle').innerText = name;
+            document.getElementById('admin-panel-view').classList.add('hide-box');
+            document.getElementById('control-panel-view').classList.remove('hide-box');
+            if(isAdmin) document.getElementById('btn-admin-view').classList.remove('active');
+            document.querySelectorAll('.game-btn').forEach(b => {
+                if(!b.classList.contains('admin-btn') && !b.classList.contains('my-room-btn')) b.classList.remove('active');
+            });
+            if(btnElement) btnElement.classList.add('active');
+            
+            if(name === 'OnlyUp') document.getElementById('ahk-section').classList.remove('hide-box'); 
             else document.getElementById('ahk-section').classList.add('hide-box');
 
             if (name === 'Talk') {
@@ -471,173 +514,143 @@
                 document.getElementById('timer-controls').classList.add('hide-box');
                 document.getElementById('text-controls').classList.remove('hide-box');
                 resetPreview();
-                const pv = document.getElementById('preview-display');
-                pv.innerText = "TALK MODE";
-                pv.className = "text-mode-font"; 
-                pv.style.fontFamily = "'Kanit', sans-serif";
+                document.getElementById('preview-display').innerText = "TALK MODE";
+                document.getElementById('preview-display').style.fontFamily = "'Kanit', sans-serif";
+                document.getElementById('preview-display').style.fontSize = "30px";
+                document.getElementById('preview-display').style.color = "#aaa";
             } else {
                 isTextMode = false;
                 document.getElementById('timer-controls').classList.remove('hide-box');
                 document.getElementById('text-controls').classList.add('hide-box');
                 document.getElementById('sec').value = time;
-                const pv = document.getElementById('preview-display');
-                pv.className = "digital-font";
-                pv.style.fontFamily = selectedFont;
+                resetPreview();
                 updatePreviewStatic();
             }
         }
 
         function handleStart() {
+            if (!currentRoomId || isTextMode) return;
             const dur = parseInt(document.getElementById('sec').value);
-            const game = document.getElementById('gameTitle').innerText;
-            const now = Date.now();
+            
+            // Audio check
+            if(audioCtx.state === 'suspended') audioCtx.resume();
             soundStartAt = parseInt(document.getElementById('sound-sec-start').value) || 10;
             
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-
-            database.ref(currentRoomId).update({
-                mode: 'running', target: now + (dur*1000) + 2500, duration: dur, game: game, font: selectedFont, timestamp: now
+            const now = Date.now();
+            const target = now + (dur * 1000) + 2500;
+            const game = document.getElementById('gameTitle').innerText;
+            
+            startPreviewSimulation(dur, game);
+            
+            // SEND FONT DATA TO FIREBASE
+            database.ref(currentRoomId).set({ 
+                mode: 'running', 
+                target: target, 
+                duration: dur, 
+                game: game, 
+                font: selectedFont, // Sending Font
+                timestamp: now 
             });
-            startTimerSim(dur);
+        }
+
+        function handleReset() {
+            if (!currentRoomId) return;
+            resetPreview();
+            if(!isTextMode) updatePreviewStatic();
+            database.ref(currentRoomId).set({ mode: 'stop', target: 0 });
         }
 
         function handleSendText() {
             const msg = document.getElementById('textMsg').value;
-            database.ref(currentRoomId).update({ mode: 'text', message: msg, font: "'Kanit', sans-serif", timestamp: Date.now() });
-            const pv = document.getElementById('preview-display');
-            pv.innerText = msg;
-            pv.className = "text-mode-font";
-            pv.style.fontFamily = "'Kanit', sans-serif";
+            if(!msg) return;
+            
+            showTextPreview(msg);
+            database.ref(currentRoomId).set({ mode: 'text', message: msg, font: "'Kanit', sans-serif", timestamp: Date.now() });
             document.getElementById('textMsg').value = "";
         }
+        
+        function copyLink() { navigator.clipboard.writeText(document.getElementById('overlayLink').value); alert("Copied!"); }
+        function copyId() { navigator.clipboard.writeText(document.getElementById('onlyUpRoomId').value); alert("Copied!"); }
 
-        function handleReset() {
-            database.ref(currentRoomId).update({ mode: 'stop' });
-            resetPreview();
-            if(!isTextMode) updatePreviewStatic();
+        function updatePreviewStatic() {
+            if(!isTextMode) {
+                const el = document.getElementById('preview-display');
+                el.innerText = document.getElementById('sec').value;
+                el.className = "digital-font"; 
+                el.style.fontFamily = selectedFont; // Use Selected Font
+                el.style.color = "white";
+            }
         }
 
-        function startTimerSim(duration) {
+        function startPreviewSimulation(duration, gameName) {
             const el = document.getElementById('preview-display');
             const start = Date.now();
-            const end = start + (duration * 1000) + 2500;
-            el.style.fontFamily = selectedFont; 
+            const end = start + (duration * 1000) + 2500; 
+
             if(previewInterval) clearInterval(previewInterval);
-            lastPlayedSec = -1;
+            if(previewTimeout) clearTimeout(previewTimeout);
+            
+            el.style.fontFamily = selectedFont; // Ensure font is applied
+            el.style.fontSize = "70px";
+            el.style.color = "white";
+
+            lastPlayedSec = -1; // Reset sound tracker
 
             previewInterval = setInterval(() => {
-                const left = end - Date.now();
-                if (Date.now() - start < 2500) {
-                    el.innerText = "READY"; el.className = "preview-intro";
-                    el.style.fontFamily = selectedFont; 
-                } else if (left <= 0) {
-                    el.innerText = "0"; el.classList.remove('preview-intro');
-                    clearInterval(previewInterval);
-                    if(isSoundOn) playSoundEffect();
-                } else {
-                    const sec = Math.ceil(left/1000);
-                    el.innerText = sec; el.className = "digital-font";
+                const now = Date.now();
+                const left = end - now;
+
+                if (now - start < 2500) {
+                    el.className = "preview-intro";
                     el.style.fontFamily = selectedFont;
-                    if(sec <= 3) el.classList.add('preview-panic'); else el.classList.remove('preview-panic');
-                    if (isSoundOn && sec <= soundStartAt && sec !== lastPlayedSec) {
-                        playSoundEffect(); lastPlayedSec = sec;
+                    if (gameName.includes('Roblox')) el.innerText = "READY";
+                    else if (gameName.includes('OnlyUp')) el.innerText = "GO";
+                    else el.innerText = "READY";
+                } else {
+                    if (left <= 0) {
+                        el.innerText = "0";
+                        el.classList.remove('preview-intro');
+                        clearInterval(previewInterval);
+                        if(isSoundOn) playSoundEffect(); // Final Beep
+                        previewTimeout = setTimeout(() => { el.innerText = duration; }, 2000);
+                    } else {
+                        const sec = Math.ceil(left / 1000);
+                        el.innerText = sec;
+                        el.classList.remove('preview-intro');
+                        
+                        if (sec <= 3) el.classList.add('preview-panic'); 
+                        else el.classList.remove('preview-panic');
+
+                        // SOUND LOGIC
+                        if (isSoundOn) {
+                            if (sec <= soundStartAt && sec !== lastPlayedSec) {
+                                playSoundEffect();
+                                lastPlayedSec = sec;
+                            }
+                        }
                     }
                 }
             }, 50);
         }
 
-        function switchToMyRoom() { currentRoomId = myRoomId; updateUI(); selectGame('Roblox', 60, document.querySelectorAll('.nav-btn')[0]); }
-        function handleResetLink() {
-            if(!confirm("Create new room?")) return;
-            const s = Math.floor(1000 + Math.random() * 9000);
-            localStorage.setItem('room_s_' + auth.currentUser.uid, s);
-            myRoomId = `room_${auth.currentUser.uid.substring(0, 8)}_${s}`;
-            switchToMyRoom();
-        }
-        function updateUI() {
-            const base = window.location.href.replace('index.html','').replace('control.html',''); 
-            const url = base.endsWith('/') ? base : base + '/';
-            document.getElementById('overlayLink').value = `${url}overlay.html?id=${currentRoomId}`;
-            document.getElementById('onlyUpRoomId').value = currentRoomId;
-        }
-        function updatePreviewStatic() { 
+        function showTextPreview(msg) {
             const el = document.getElementById('preview-display');
-            el.innerText = document.getElementById('sec').value; 
-            el.style.fontFamily = selectedFont;
+            if(previewInterval) clearInterval(previewInterval);
+            el.innerText = msg;
+            el.style.fontFamily = "'Kanit', sans-serif";
+            el.style.fontSize = "32px";
+            el.style.color = "#2979ff";
+            setTimeout(() => { if(isTextMode) el.innerText = "TALK MODE"; }, 5000);
         }
-        function copyLink() { navigator.clipboard.writeText(document.getElementById('overlayLink').value); alert("Copied!"); }
-        function copyId() { navigator.clipboard.writeText(document.getElementById('onlyUpRoomId').value); alert("Copied!"); }
+
         function resetPreview() {
             if(previewInterval) clearInterval(previewInterval);
+            if(previewTimeout) clearTimeout(previewTimeout);
             const el = document.getElementById('preview-display');
             el.className = "digital-font"; 
             el.style.fontFamily = selectedFont;
             el.style.color = "white";
         }
-
-        function loadRooms() {
-            database.ref().on('value', s => {
-                const list = document.getElementById('room-list'); list.innerHTML = '';
-                const rooms = s.val();
-                for(let r in rooms) {
-                    if(!r.startsWith('room_') || r === myRoomId) continue;
-                    const rData = rooms[r];
-                    const statusColor = (rData.mode === 'running') ? '#10b981' : '#64748b';
-                    list.innerHTML += `<div style="background:#1e293b; border:1px solid #334155; border-radius:12px; padding:15px;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <div style="font-size:10px; color:#64748b;">${r}</div>
-                            <div style="width:8px; height:8px; border-radius:50%; background:${statusColor};"></div>
-                        </div>
-                        <div style="font-size:13px; color:white; margin-bottom:10px; font-weight:600; overflow:hidden; text-overflow:ellipsis;">${rooms[r].email}</div>
-                        <button style="width:100%; font-size:11px; padding:8px; color:var(--accent); border:1px solid rgba(59, 130, 246, 0.3); background:transparent; border-radius:6px; cursor:pointer;" 
-                        onclick="openHijackModal('${r}', '${rooms[r].email}')">CONTROL</button>
-                    </div>`;
-                }
-            });
-        }
-        function showAdminPanel() {
-            document.getElementById('admin-panel-view').classList.remove('hide-box');
-            document.getElementById('control-panel-view').classList.add('hide-box');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector('.admin-mode').classList.add('active');
-        }
-        function openHijackModal(id, email) {
-            hijackRoomId = id;
-            document.getElementById('hijack-overlay').classList.remove('hide-box');
-            document.getElementById('hijack-target-email').innerText = email;
-            selectHijackGame('Roblox', document.querySelectorAll('.tag-btn')[0]);
-        }
-        function closeHijackModal() { document.getElementById('hijack-overlay').classList.add('hide-box'); }
-        function selectHijackGame(mode, btn) {
-            currentHijackGame = mode;
-            document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if(mode === 'Talk') {
-                document.getElementById('hijack-timer-inputs').classList.add('hide-box');
-                document.getElementById('hijack-text-inputs').classList.remove('hide-box');
-                document.getElementById('hijack-preview').style.fontFamily = "'Kanit', sans-serif";
-                document.getElementById('hijack-preview').style.fontSize = "24px";
-                document.getElementById('hijack-preview').innerText = "TEXT MODE";
-            } else {
-                document.getElementById('hijack-timer-inputs').classList.remove('hide-box');
-                document.getElementById('hijack-text-inputs').classList.add('hide-box');
-                document.getElementById('hijack-preview').style.fontFamily = "'Black Ops One', cursive";
-                document.getElementById('hijack-preview').style.fontSize = "40px";
-                document.getElementById('hijack-preview').innerText = "READY";
-            }
-        }
-        function hijackStart() {
-            const now = Date.now();
-            if(currentHijackGame === 'Talk') {
-                const msg = document.getElementById('hijack-msg').value;
-                database.ref(hijackRoomId).update({ mode: 'text', message: msg, font: "'Kanit', sans-serif", timestamp: now });
-                document.getElementById('hijack-preview').innerText = msg;
-            } else {
-                const dur = parseInt(document.getElementById('hijack-sec').value);
-                database.ref(hijackRoomId).update({ mode: 'running', target: now+(dur*1000)+2500, duration: dur, game: currentHijackGame, timestamp: now });
-            }
-        }
-        function hijackReset() { database.ref(hijackRoomId).update({ mode: 'stop' }); }
 
         document.addEventListener("keydown", (e) => {
             if (isTextMode && e.key === "Enter") { e.preventDefault(); handleSendText(); }
