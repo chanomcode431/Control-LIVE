@@ -400,7 +400,7 @@
         function updateRoomUI() {
             const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '').replace('control.html', ''); 
             const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
-            const fullLink = `${cleanBase}overlay1.html?id=${currentRoomId}`;
+            const fullLink = `${cleanBase}overlay.html?id=${currentRoomId}`;
             
             document.getElementById('overlayLink').value = fullLink;
             document.getElementById('onlyUpRoomId').value = currentRoomId; // อัปเดตช่อง Room ID
