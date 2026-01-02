@@ -2,47 +2,59 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Countdown Overlay</title>
+    <title>Game Overlay</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
     <style>
+        /* พื้นหลังโปร่งใส สำหรับ OBS */
         body { 
-            margin: 0; background: transparent; 
-            display: flex; justify-content: center; align-items: center; 
-            height: 100vh; overflow: hidden; 
-            font-family: 'Courier New', monospace; 
-        }
-        .timer { 
-            color: white; 
-            font-size: 120px; 
-            font-weight: 900; 
-            text-shadow: 4px 4px 0 #000, -2px -2px 0 #000;
-            transition: opacity 0.5s; 
-            opacity: 1;
-        }
-
-        /* โหมดสีแดง (3 วินาทีสุดท้าย) */
-        .panic-mode {
-            font-size: 220px; color: #ff0000; text-shadow: 8px 8px 0 #800000;
-            animation: pulse-fast 0.5s infinite;
+            background-color: rgba(0, 0, 0, 0); 
+            margin: 0; padding: 0; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            text-align: center;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh;
+            color: white;
+            text-shadow: 2px 2px 4px #000;
         }
 
-        /* โหมด Intro (เตรียมบิน / เริ่มนับถอยหลัง) */
-        .intro-mode {
-            font-size: 80px; color: #00e676; text-shadow: 3px 3px 0 #000;
-            animation: pulse-slow 1s infinite;
+        .container {
+            /* ปรับแต่งกรอบตามใจชอบ */
+            padding: 20px;
         }
 
-        @keyframes pulse-slow { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        @keyframes pulse-fast { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        #gameName {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00e676; /* สีเขียว */
+        }
+
+        #timer {
+            font-size: 120px;
+            font-weight: bold;
+            font-family: monospace;
+            line-height: 1;
+        }
+
+        /* สถานะตอนหยุด */
+        .stopped { color: #ff4444; }
+        .running { color: #ffffff; }
     </style>
 </head>
 <body>
-    <div class="timer" id="timer">0</div>
+
+    <div class="container">
+        <div id="gameName">รอสัญญาณ...</div>
+        <div id="timer">00:00</div>
+    </div>
 
     <script>
-        // --- 🔑 กุญแจ Firebase ของคุณ ---
+        // --- 1. การตั้งค่า Firebase (ชุดเดียวกับตัว Control) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDgn9Vll-qcLhw7dcNtA9oGKy_BCRuefIs",
             authDomain: "control-tiktok.firebaseapp.com",
@@ -55,82 +67,75 @@
         };
 
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        const db = firebase.database();
-        
-        let targetTimestamp = 0;
-        let originalDuration = 0;
-        let isRunning = false;
+
+        // --- 2. ส่วนสำคัญ: รับ Room ID จากลิ้งค์ ---
+        const params = new URLSearchParams(window.location.search);
+        const roomId = params.get('id'); // ดึงค่าจาก ?id=...
+
+        const gameNameEl = document.getElementById('gameName');
+        const timerEl = document.getElementById('timer');
         let timerInterval = null;
-        let currentGameName = ""; 
 
-        db.ref('timer').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                if (data.mode === 'stop') {
-                    isRunning = false;
-                    const el = document.getElementById("timer");
-                    el.innerHTML = "0"; el.style.opacity = "1"; el.className = "timer";
-                } else if (data.mode === 'running') {
-                    targetTimestamp = data.target;
-                    originalDuration = data.duration * 1000;
-                    currentGameName = data.game || ""; 
-                    isRunning = true;
-                    document.getElementById("timer").style.opacity = "1";
-                    startCountdown();
-                }
-            }
-        });
+        if (!roomId) {
+            gameNameEl.innerText = "Error: ไม่พบ Room ID";
+            gameNameEl.style.color = "red";
+            timerEl.innerText = "Link ผิด";
+        } else {
+            // เชื่อมต่อ Firebase ไปที่ห้องนั้นๆ
+            const dbRef = firebase.database().ref(roomId);
 
-        function startCountdown() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if (!isRunning) return;
-                const now = new Date().getTime();
-                const totalDistance = targetTimestamp - now;
-                const timerElement = document.getElementById("timer");
-                const introDiff = totalDistance - originalDuration;
-
-                // --- ช่วง Intro (ก่อนเริ่มนับจริง) ---
-                if (introDiff > 0) {
-                    
-                    let introText = "เตรียมบิน✈️"; // ค่าปกติ (เกมอื่น)
-                    
-                    // 🔥 เช็กชื่อเกมตรงนี้ (แปลงเป็นตัวเล็กให้หมดเพื่อกันพลาด)
-                    let checkName = (currentGameName || "").toLowerCase().trim();
-
-                    // ถ้าชื่อเกมมีคำว่า 'roblox'
-                    if (checkName.includes('roblox')) {
-                        introText = "เริ่มนับถอยหลัง"; 
-                        timerElement.style.fontSize = "60px"; // ลดขนาดฟอนต์ลงนิดหน่อยเพราะคำยาว
-                    } else {
-                        timerElement.style.fontSize = "80px"; // เกมอื่นตัวใหญ่ปกติ
-                    }
-
-                    timerElement.innerHTML = introText;
-                    timerElement.className = "timer intro-mode";
+            dbRef.on('value', (snapshot) => {
+                const data = snapshot.val();
                 
-                } else {
-                    // --- ช่วงนับเวลาจริง ---
-                    timerElement.style.fontSize = ""; 
-                    
-                    if (totalDistance <= 0) {
-                        timerElement.innerHTML = "0"; 
-                        setTimeout(() => { timerElement.style.opacity = "0"; }, 500);
-                        clearInterval(timerInterval); return;
-                    }
+                if (data) {
+                    // อัปเดตชื่อเกม
+                    if(data.game) gameNameEl.innerText = data.game;
 
-                    const totalSeconds = Math.ceil(totalDistance / 1000);
-                    
-                    // 3 วิสุดท้าย (สีแดง)
-                    if (totalSeconds <= 3) { timerElement.className = "timer panic-mode"; } 
-                    else { timerElement.className = "timer"; }
-                    
-                    let displayTime = totalSeconds >= 60 ? 
-                        (Math.floor(totalSeconds / 60) + ":" + (totalSeconds % 60 < 10 ? "0" : "") + (totalSeconds % 60)) : totalSeconds;
-                    timerElement.innerHTML = displayTime;
+                    // อัปเดตสถานะ
+                    if (data.mode === 'stop') {
+                        stopTimer();
+                        timerEl.innerText = "00:00";
+                        timerEl.className = "stopped";
+                    } else if (data.mode === 'running') {
+                        // คำนวณเวลาที่เหลือโดยอิงจาก Target Time (Server Time)
+                        // เพื่อให้เวลาตรงกันแม้เน็ตจะดีเลย์
+                        startSyncTimer(data.target);
+                        timerEl.className = "running";
+                    }
                 }
-            }, 50);
+            });
         }
+
+        function startSyncTimer(targetTime) {
+            if (timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const diff = targetTime - now;
+
+                if (diff <= 0) {
+                    timerEl.innerText = "00:00";
+                    stopTimer();
+                    // อาจจะเพิ่มเสียงแจ้งเตือนหมดเวลาตรงนี้
+                } else {
+                    // แปลง millisecond เป็น วินาที
+                    const secondsLeft = Math.ceil(diff / 1000);
+                    timerEl.innerText = formatTime(secondsLeft);
+                }
+            }, 100); // อัปเดตทุก 0.1 วิ เพื่อความลื่นไหล
+        }
+
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
     </script>
 </body>
 </html>
