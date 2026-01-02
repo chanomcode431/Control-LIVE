@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Overlay</title>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background-color: transparent; /* พื้นหลังใส */
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .timer-container {
+            text-align: center;
+            color: #ffffff; 
+            text-shadow: 3px 3px 0px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; /* ขอบดำหนาๆ จะได้เห็นชัด */
+            font-size: 90px; 
+            font-weight: 900;
+            /* เอาพื้นหลังเทาๆ ออกเพื่อให้เนียนไปกับไลฟ์ หรือใส่กลับมาก็ได้ถ้าต้องการ */
+            /* background: rgba(0, 0, 0, 0.5); padding: 20px; border-radius: 15px; */
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container" id="timer">Loading...</div>
+
+    <script>
+        // ดึงค่าเวลา t จาก URL (ที่ส่งมาจากหน้าแผงควบคุม)
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetTimestamp = urlParams.get('t');
+
+        function updateTimer() {
+            if (!targetTimestamp) {
+                document.getElementById("timer").innerHTML = "ยังไม่ตั้งเวลา";
+                document.getElementById("timer").style.fontSize = "40px";
+                return;
+            }
+
+            const now = new Date().getTime();
+            const distance = targetTimestamp - now;
+
+            if (distance < 0) {
+                document.getElementById("timer").innerHTML = "00:00:00"; // หรือคำว่า "LIVE NOW!"
+                return;
+            }
+
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("timer").innerHTML = 
+                (hours < 10 ? "0" + hours : hours) + ":" + 
+                (minutes < 10 ? "0" + minutes : minutes) + ":" + 
+                (seconds < 10 ? "0" + seconds : seconds);
+        }
+
+        setInterval(updateTimer, 1000);
+        updateTimer();
+    </script>
+</body>
+</html>

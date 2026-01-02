@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตั้งเวลา Countdown (วินาที)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; text-align: center; background: #f4f4f9; color: #333; }
+        .container { background: white; padding: 40px; border-radius: 15px; max-width: 500px; margin: 50px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h1 { margin-bottom: 20px; color: #444; }
+        .input-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        input { font-size: 24px; padding: 15px; width: 80px; text-align: center; border: 2px solid #ddd; border-radius: 10px; }
+        input:focus { border-color: #007bff; outline: none; }
+        label { display: block; font-size: 14px; margin-top: 5px; color: #777; }
+        button { background: linear-gradient(135deg, #007bff, #0056b3); color: white; border: none; padding: 15px 40px; font-size: 20px; border-radius: 50px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,123,255,0.4); }
+        button:active { transform: translateY(0); }
+        .result-box { margin-top: 30px; padding: 20px; background: #e9ecef; border-radius: 10px; display: none; }
+        textarea { width: 100%; height: 50px; margin-top: 10px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: monospace; }
+        .copy-btn { background: #28a745; margin-top: 10px; padding: 10px 20px; font-size: 16px; width: 100%; }
+        .copy-btn:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⏱️ ตั้งเวลานับถอยหลัง</h1>
+        
+        <div class="input-group">
+            <div>
+                <input type="number" id="inputMin" placeholder="00" min="0" value="10">
+                <label>นาที</label>
+            </div>
+            <div style="font-size: 30px; padding-top: 10px;">:</div>
+            <div>
+                <input type="number" id="inputSec" placeholder="00" min="0" max="59" value="00">
+                <label>วินาที</label>
+            </div>
+        </div>
+
+        <button onclick="generateLink()">สร้างลิงก์ Overlay</button>
+
+        <div class="result-box" id="resultBox">
+            <p style="font-weight: bold; color: #555;">👇 ลิงก์สำหรับใส่ใน TikTok / OBS</p>
+            <textarea id="outputUrl" readonly onclick="this.select()"></textarea>
+            <button class="copy-btn" onclick="copyToClipboard()">ก๊อปปี้ลิงก์</button>
+        </div>
+    </div>
+
+    <script>
+        function generateLink() {
+            const min = parseInt(document.getElementById('inputMin').value) || 0;
+            const sec = parseInt(document.getElementById('inputSec').value) || 0;
+
+            if (min === 0 && sec === 0) {
+                alert("กรุณาใส่อย่างน้อย 1 วินาทีครับ");
+                return;
+            }
+
+            // คำนวณเวลาเป้าหมาย (เวลาปัจจุบัน + เวลาที่กรอก)
+            const now = new Date().getTime();
+            const durationInMillis = (min * 60 * 1000) + (sec * 1000);
+            const targetTime = now + durationInMillis;
+
+            // สร้าง URL (ส่งเวลาเป้าหมายไป)
+            const finalUrl = `${window.location.origin}/overlay.html?t=${targetTime}`;
+
+            document.getElementById('outputUrl').value = finalUrl;
+            document.getElementById('resultBox').style.display = 'block';
+        }
+
+        function copyToClipboard() {
+            const copyText = document.getElementById("outputUrl");
+            copyText.select();
+            document.execCommand("copy");
+            alert("ก๊อปปี้เรียบร้อย!");
+        }
+    </script>
+</body>
+</html>
