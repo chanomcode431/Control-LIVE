@@ -1,0 +1,14 @@
+body {
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+#timer {
+  font-size: 120px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  text-shadow: 0 0 20px black;
+}
