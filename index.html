@@ -20,6 +20,7 @@
             --text-main: #ffffff;
             --text-muted: #b0bec5;
             --accent-blue: #2979ff;
+            --accent-orange: #ff9100;
         }
 
         * { box-sizing: border-box; }
@@ -47,7 +48,7 @@
         }
 
         .brand {
-            font-size: 22px; 
+            font-size: 20px; 
             font-weight: 600; 
             color: var(--primary); 
             margin-bottom: 20px;
@@ -144,7 +145,7 @@
             width: 100%;
         }
 
-        /* Styles for Preview (Simulation) */
+        /* Styles for Preview */
         .preview-intro { color: #ffd700 !important; font-size: 36px !important; letter-spacing: 2px; }
         .preview-panic { color: #ff0000 !important; animation: panic-pulse 0.5s infinite; text-shadow: 0 0 20px red !important; }
         .preview-static-red { color: #ff0000 !important; animation: none !important; }
@@ -209,10 +210,10 @@
         }
         .link-box {
             display: flex; background: #121212; padding: 5px; border-radius: 8px; border: 1px solid #333;
-            align-items: center;
+            align-items: center; margin-bottom: 10px;
         }
         .link-input {
-            flex: 1; background: transparent; border: none; color: #777; 
+            flex: 1; background: transparent; border: none; color: #888; 
             padding: 8px; font-size: 12px; outline: none;
         }
         .btn-copy-small {
@@ -226,6 +227,17 @@
             border: 1px dashed #444; width: 100%; text-transform: none; letter-spacing: 0;
         }
         .btn-new-room:hover { border-color: #777; color: #777; }
+
+        /* --- Special Box for OnlyUp --- */
+        .ahk-box {
+            background: rgba(255, 145, 0, 0.1);
+            border: 1px solid var(--accent-orange);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+        }
+        .ahk-title { color: var(--accent-orange); font-size: 14px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
 
         .hidden { opacity: 0 !important; }
         .hide-box { display: none !important; }
@@ -242,7 +254,7 @@
 <body>
 
     <div class="sidebar">
-        <div class="brand"><i class="fas fa-gamepad"></i>Control Center By:STiMEXs</div>
+        <div class="brand"><i class="fas fa-gamepad"></i> Control: STiMEXs</div>
         
         <div>
             <div class="menu-label">เลือกโหมดเกม</div>
@@ -295,6 +307,15 @@
                         <i class="fas fa-play"></i> START (Space)
                     </button>
                 </div>
+
+                <div id="ahk-section" class="ahk-box hide-box">
+                    <div class="ahk-title"><i class="fas fa-robot"></i> AutoHotkey: Room ID Setup</div>
+                    <div class="link-box" style="background: rgba(0,0,0,0.4); border-color: #555;">
+                        <input type="text" id="onlyUpRoomId" class="link-input" style="color: var(--accent-orange); font-weight: bold;" readonly>
+                        <button class="btn-copy-small" style="background: var(--accent-orange);" onclick="copyOnlyUpRoomId()">COPY ID</button>
+                    </div>
+                    <div style="font-size: 11px; color: #888;">นำ ID นี้ไปใส่ในไฟล์ .ahk ของคุณตรงส่วน <b>RoomID := "..."</b></div>
+                </div>
             </div>
 
             <div id="text-controls" class="control-group hide-box">
@@ -312,10 +333,10 @@
                 <div class="control-label" style="font-size: 12px;">🔗 Overlay Link (ใส่ใน OBS)</div>
                 <div class="link-box">
                     <input type="text" id="overlayLink" class="link-input" readonly>
-                    <button class="btn-copy-small" onclick="copyLink()">COPY</button>
+                    <button class="btn-copy-small" onclick="copyLink()">COPY URL</button>
                 </div>
                 <button class="btn-new-room" onclick="generateNewRoom()">
-                    <i class="fas fa-sync"></i> สร้างห้องใหม่ / รีเซ็ตลิ้งค์ (ID: <span id="roomIdDisplay">...</span>)
+                    <i class="fas fa-sync"></i> สร้างห้องใหม่ / รีเซ็ตลิ้งค์
                 </button>
             </div>
 
@@ -323,7 +344,6 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyDgn9Vll-qcLhw7dcNtA9oGKy_BCRuefIs",
             authDomain: "control-tiktok.firebaseapp.com",
@@ -335,13 +355,11 @@
             measurementId: "G-DZ76HRE0RM"
         };
 
-        // --- 2. VARIABLES ---
         let currentRoomId = "";
         let isTextMode = false;
         let previewInterval = null;
         let previewTimeout = null;
 
-        // --- 3. INIT ---
         try {
             if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
             initRoom();
@@ -364,7 +382,6 @@
             }
         }
 
-        // --- 4. ROOM LOGIC ---
         function initRoom() {
             let savedRoom = localStorage.getItem('my_room_id');
             if (savedRoom) { currentRoomId = savedRoom; } 
@@ -384,7 +401,9 @@
             const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '').replace('control.html', ''); 
             const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
             const fullLink = `${cleanBase}overlay.html?id=${currentRoomId}`;
+            
             document.getElementById('overlayLink').value = fullLink;
+            document.getElementById('onlyUpRoomId').value = currentRoomId; // อัปเดตช่อง Room ID
             document.getElementById('roomIdDisplay').innerText = currentRoomId;
         }
 
@@ -393,23 +412,33 @@
             copyText.select();
             copyText.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(copyText.value);
-            const btn = document.querySelector('.btn-copy-small');
-            const originalText = btn.innerText;
-            btn.innerText = "COPIED!";
-            setTimeout(() => btn.innerText = originalText, 2000);
+            alert("คัดลอก URL เรียบร้อย!");
         }
 
-        // --- 5. GAME SELECTION ---
+        function copyOnlyUpRoomId() {
+            const copyText = document.getElementById("onlyUpRoomId");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            alert("คัดลอก Room ID เรียบร้อย! นำไปใส่ในสคริปต์ AHK ได้เลย");
+        }
+
         function selectGame(gameName, defaultTime, btnElement) {
             document.getElementById('gameTitle').innerText = gameName;
             document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
 
+            // แสดง/ซ่อนช่อง ID สำหรับ OnlyUp
+            if(gameName === 'OnlyUp') {
+                document.getElementById('ahk-section').classList.remove('hide-box');
+            } else {
+                document.getElementById('ahk-section').classList.add('hide-box');
+            }
+
             if (gameName === 'Talk') {
                 isTextMode = true;
                 document.getElementById('timer-controls').classList.add('hide-box');
                 document.getElementById('text-controls').classList.remove('hide-box');
-                
                 resetPreview();
                 document.getElementById('preview-display').innerText = "พิมพ์ข้อความ...";
                 document.getElementById('preview-display').style.fontSize = "30px";
@@ -418,7 +447,6 @@
                 isTextMode = false;
                 document.getElementById('timer-controls').classList.remove('hide-box');
                 document.getElementById('text-controls').classList.add('hide-box');
-                
                 document.getElementById('sec').value = defaultTime;
                 resetPreview();
                 updatePreviewStatic();
@@ -435,7 +463,6 @@
             }
         }
 
-        // --- 6. PREVIEW SIMULATION ---
         function startPreviewSimulation(duration, gameName) {
             const previewEl = document.getElementById('preview-display');
             const startTime = new Date().getTime();
@@ -461,15 +488,12 @@
                         previewEl.innerText = "0";
                         previewEl.className = "preview-static-red";
                         clearInterval(previewInterval);
-                        
                         previewTimeout = setTimeout(() => {
                             previewEl.classList.add('hidden');
                         }, 2000);
-
                     } else {
                         const secondsLeft = Math.ceil(diff / 1000);
                         previewEl.innerText = secondsLeft;
-
                         if (secondsLeft <= 3) {
                             previewEl.className = "preview-panic";
                         } else {
@@ -484,11 +508,9 @@
             const previewEl = document.getElementById('preview-display');
             if(previewInterval) clearInterval(previewInterval);
             if(previewTimeout) clearTimeout(previewTimeout);
-
             previewEl.innerText = msg;
             previewEl.className = "preview-text-msg";
             previewEl.classList.remove('hidden');
-
             previewTimeout = setTimeout(() => {
                 previewEl.classList.add('hidden');
             }, 5000);
@@ -503,17 +525,13 @@
             previewEl.style.color = "white";
         }
 
-        // --- 7. ACTIONS (Start/Reset/Send) ---
         function handleStart() {
             if (!currentRoomId || isTextMode) return;
-            
             const duration = parseInt(document.getElementById('sec').value);
             const now = new Date().getTime();
             const targetTime = now + (duration * 1000) + 2500; 
             const gameName = document.getElementById('gameTitle').innerText;
-
             startPreviewSimulation(duration, gameName);
-            
             firebase.database().ref(currentRoomId).set({
                 mode: 'running',
                 target: targetTime,
@@ -525,7 +543,6 @@
 
         function handleReset() {
             if (!currentRoomId) return;
-            
             resetPreview();
             if(!isTextMode) updatePreviewStatic();
             else {
@@ -534,37 +551,30 @@
                 el.style.fontSize = "30px";
                 el.style.color = "#aaa";
             }
-
             firebase.database().ref(currentRoomId).set({ mode: 'stop', target: 0 });
         }
 
         function handleSendText() {
             if (!currentRoomId || !isTextMode) return;
-
             const msg = document.getElementById('textMsg').value;
             if (!msg.trim()) return alert("กรุณาพิมพ์ข้อความ");
             const now = new Date().getTime();
-
             showTextPreview(msg);
-
             firebase.database().ref(currentRoomId).set({
                 mode: 'text',
                 message: msg,
                 timestamp: now,
                 duration: 5
             });
-
             document.getElementById('textMsg').value = "";
         }
 
-        // --- 8. SHORTCUTS ---
         document.addEventListener("keydown", (e) => {
             if (isTextMode && e.key === "Enter") {
                 e.preventDefault();
                 handleSendText();
             }
             if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") return;
-
             if (!isTextMode) {
                 if (e.key === " ") { e.preventDefault(); handleStart(); }
                 if (e.key === "r" || e.key === "R") { handleReset(); }
