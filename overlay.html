@@ -118,8 +118,6 @@
             dbRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    if(data.game) gameNameEl.innerText = data.game;
-
                     if (data.mode === 'stop') {
                         stopTimer();
                         timerEl.innerText = "STOP"; 
@@ -184,3 +182,4 @@
     </script>
 </body>
 </html>
+
