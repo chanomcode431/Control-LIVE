@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #121212; --bg-card: #1e1e1e; --bg-sidebar: #181818;
+            --primary: #00e676; --danger: #ff5252; --text-main: #ffffff;
+            --text-muted: #b0bec5; --accent-blue: #2979ff; --accent-orange: #ff9100;
+        }
+
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Kanit', sans-serif; margin: 0; padding: 0; 
+            background: var(--bg-dark); color: var(--text-main);
+            height: 100vh; display: flex; overflow: hidden;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar { 
+            width: 260px; background: var(--bg-sidebar); border-right: 1px solid #333; 
+            padding: 20px; display: flex; flex-direction: column; gap: 15px; 
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3); z-index: 10;
+        }
+        .brand { font-size: 20px; font-weight: 600; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .menu-label { font-size: 12px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        
+        .game-btn { 
+            padding: 12px 15px; border-radius: 8px; background: transparent; 
+            color: var(--text-muted); cursor: pointer; font-size: 16px; 
+            display: flex; align-items: center; gap: 12px; border: 1px solid transparent; 
+        }
+        .game-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .game-btn.active { 
+            background: rgba(0, 230, 118, 0.15); color: var(--primary); 
+            border: 1px solid rgba(0, 230, 118, 0.3); font-weight: 600; 
+        }
+
+        /* --- Content --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; padding: 30px; overflow-y: auto; align-items: center; }
+        
+        /* --- Room List Card (ส่วนเพิ่มสำหรับ Admin) --- */
+        .room-list-card {
+            background: var(--bg-card); border-radius: 15px; padding: 20px; 
+            width: 100%; max-width: 700px; border: 1px solid #333; margin-bottom: 20px;
+            max-height: 250px; overflow-y: auto;
+        }
+        .room-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #252525; padding: 10px 15px; margin-bottom: 8px;
+            border-radius: 8px; border: 1px solid #333; transition: 0.2s;
+        }
+        .room-item:hover { border-color: var(--primary); }
+        .btn-takeover {
+            background: var(--primary); color: #000; border: none;
+            padding: 5px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px;
+        }
+        .btn-takeover:hover { filter: brightness(1.2); }
+        .refresh-btn { background: transparent; color: #aaa; border: 1px solid #444; padding: 5px 10px; border-radius: 5px; cursor: pointer; float: right; font-size: 12px; }
+        .refresh-btn:hover { color: white; border-color: white; }
+
+        /* --- Dashboard Controls --- */
+        .dashboard-card {
+            background: var(--bg-card); border-radius: 20px; padding: 40px; 
+            width: 100%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            border: 1px solid #333; opacity: 0.5; pointer-events: none; transition: 0.3s;
+        }
+        .dashboard-card.active-control { opacity: 1; pointer-events: all; border-color: var(--primary); }
+
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header-title h1 { margin: 0; font-size: 1.5rem; font-weight: 300; }
+        .header-title span { color: var(--primary); font-weight: 600; }
+        
+        .status-badge { font-size: 12px; background: rgba(0,0,0,0.3); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; }
+        .status-dot.online { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
+
+        #timer-container { background: #000; border: 4px solid #333; border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; position: relative; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); overflow: hidden; }
+        #preview-display { font-family: 'Black Ops One', 'Kanit', sans-serif; font-size: 70px; font-weight: 900; color: white; text-align: center; width: 100%; }
+        
+        .preview-intro { color: #ffd700 !important; font-size: 36px !important; letter-spacing: 2px; }
+        .preview-panic { color: #ff0000 !important; animation: panic-pulse 0.5s infinite; text-shadow: 0 0 20px red !important; }
+        .preview-static-red { color: #ff0000 !important; animation: none !important; }
+        .preview-text-msg { color: var(--primary) !important; font-size: 32px !important; padding: 20px; line-height: 1.4 !important; }
+        @keyframes panic-pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+
+        .control-group { margin-bottom: 20px; text-align: center; }
+        input[type="number"], select { background: #2a2a2a; border: 2px solid #444; color: white; font-size: 18px; width: 100%; text-align: center; padding: 10px; border-radius: 12px; font-weight: bold; outline: none; transition: 0.3s; }
+        input[type="number"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 230, 118, 0.2); }
+        #sec { font-size: 36px; max-width: 200px; }
+        
+        textarea { background: #2a2a2a; border: 2px solid #444; color: white; width: 100%; padding: 15px; border-radius: 12px; font-size: 18px; resize: none; outline: none; transition: 0.3s; }
+        textarea:focus { border-color: var(--accent-blue); }
+
+        .sound-box { background: rgba(0,0,0,0.2); border: 1px dashed #444; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .sound-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+        .toggle-btn { background: #333; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s; width: auto; flex: unset; }
+        .toggle-btn.active { background: var(--primary); color: #000; font-weight: bold; border-color: var(--primary); }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 20px; }
+        button.ctrl-btn { flex: 1; padding: 18px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; text-transform: uppercase; letter-spacing: 1px; color: white; }
+        .btn-start { background: linear-gradient(135deg, #00e676, #00b359); box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); }
+        .btn-reset { background: #333; color: #ff5252; border: 1px solid #ff5252; }
+        .btn-send { background: linear-gradient(135deg, #2979ff, #1565c0); box-shadow: 0 4px 15px rgba(41, 121, 255, 0.4); }
+
+        .link-box { display: flex; background: #121212; padding: 5px; border-radius: 8px; border: 1px solid #333; align-items: center; margin-bottom: 10px; margin-top: 20px; }
+        .link-input { flex: 1; background: transparent; border: none; color: #888; padding: 8px; font-size: 12px; outline: none; }
+        .btn-copy-small { background: #333; color: white; font-size: 10px; padding: 6px 12px; border-radius: 6px; margin: 0; flex: 0; width: auto; box-shadow: none; cursor: pointer; }
+
+        .hidden { opacity: 0 !important; }
+        .hide-box { display: none !important; }
+        
+        @media (max-width: 768px) { body { flex-direction: column; overflow-y: auto; } .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; } .main-content { padding: 15px; } .dashboard-card { padding: 20px; } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand"><i class="fas fa-user-shield"></i> ADMIN PANEL</div>
+        
+        <div>
+            <div class="menu-label">เลือกโหมดเกม (ควบคุม)</div>
+            <div class="game-btn active" onclick="selectGame('Roblox', 60, this)"><i class="fas fa-cube"></i> Roblox</div>
+            <div class="game-btn" onclick="selectGame('OnlyUp', 10, this)"><i class="fas fa-arrow-up"></i> OnlyUp</div>
+            <div class="game-btn" onclick="selectGame('Horror', 60, this)"><i class="fas fa-ghost"></i> Horror</div>
+            <div class="game-btn" onclick="selectGame('Talk', 0, this)"><i class="fas fa-comment-dots"></i> Talk / Chat</div>
+        </div>
+
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid #333;">
+            <button onclick="window.location.href='index.html'" style="width: 100%; padding: 10px; background: #333; border: 1px solid #555; color: #ccc; border-radius: 8px; cursor: pointer;">
+                <i class="fas fa-home"></i> กลับหน้าหลัก User
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <div class="room-list-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0; color:white; font-size: 16px;"><i class="fas fa-satellite-dish"></i> ACTIVE ROOMS (ห้องทั้งหมดในระบบ)</h3>
+                <button class="refresh-btn" onclick="scanRooms()"><i class="fas fa-sync"></i> Refresh</button>
+            </div>
+            <div id="roomListContainer" style="text-align:center; color:#555; font-size: 14px;">กำลังโหลดข้อมูล...</div>
+        </div>
+
+        <div id="controlPanel" class="dashboard-card">
+            
+            <div class="header-row">
+                <div class="header-title"><h1>โหมด: <span id="gameTitle">Roblox</span></h1></div>
+                <div class="status-badge">
+                    <div id="statusDot" class="status-dot"></div>
+                    <span id="statusText">Select a room</span>
+                </div>
+            </div>
+
+            <div class="control-label" style="text-align: left; margin-bottom: 5px;">ADMIN LIVE PREVIEW</div>
+            <div id="timer-container">
+                <div id="preview-display">WAITING</div>
+            </div>
+
+            <div id="timer-controls" class="control-group">
+                <div class="control-label">ตั้งเวลา (วินาที)</div>
+                <input type="number" id="sec" value="60" min="1" onchange="updatePreviewStatic()">
+
+                <div class="sound-box" style="margin-top: 15px;">
+                    <div class="sound-row">
+                        <div class="control-label" style="margin:0; font-size: 16px; color: white;"><i class="fas fa-volume-up"></i> ตั้งค่าเสียงนับถอยหลัง</div>
+                        <button id="soundToggleBtn" class="toggle-btn" onclick="toggleSound()"><i class="fas fa-volume-mute"></i> OFF</button>
+                    </div>
+                    <div class="sound-row">
+                        <select id="soundSelect">
+                            <option value="sound1">🎵 เสียง 1 (Beep)</option>
+                            <option value="sound2">🎵 เสียง 2 (Tick)</option>
+                            <option value="sound3">🎵 เสียง 3 (Alarm)</option>
+                            <option value="sound4">🎵 เสียง 4 (Bell)</option>
+                            <option value="sound5">🎵 เสียง 5 (Drum)</option>
+                        </select>
+                    </div>
+                    <div class="sound-row">
+                        <span style="font-size: 12px; color: #aaa;">เริ่มดังวิที่:</span>
+                        <input type="number" id="soundThreshold" value="10" min="1" max="60" style="width: 80px; font-size: 14px;">
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="ctrl-btn btn-reset" onclick="handleReset()"><i class="fas fa-stop"></i> Reset (R)</button>
+                    <button class="ctrl-btn btn-start" onclick="handleStart()"><i class="fas fa-play"></i> START (Space)</button>
+                </div>
+            </div>
+
+            <div id="text-controls" class="control-group hide-box">
+                <div class="control-label">ข้อความที่จะส่ง</div>
+                <textarea id="textMsg" rows="2" placeholder="พิมพ์ข้อความ..."></textarea>
+                <div class="btn-group">
+                    <button class="ctrl-btn btn-send" onclick="handleSendText()"><i class="fas fa-paper-plane"></i> ส่งข้อความ</button>
+                </div>
+            </div>
+
+            <div class="link-box">
+                <span style="font-size:12px; color:#aaa; margin-right:5px;">ACTIVE URL:</span>
+                <input type="text" id="overlayLink" class="link-input" placeholder="เลือกห้องด้านบนเพื่อดู URL" readonly>
+                <button class="btn-copy-small" onclick="copyLink()">COPY</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgn9Vll-qcLhw7dcNtA9oGKy_BCRuefIs",
+            authDomain: "control-tiktok.firebaseapp.com",
+            databaseURL: "https://control-tiktok-default-rtdb.firebaseio.com",
+            projectId: "control-tiktok",
+            storageBucket: "control-tiktok.firebasestorage.app",
+            messagingSenderId: "771700169818",
+            appId: "1:771700169818:web:abe98c40c5b1baabab0c63",
+            measurementId: "G-DZ76HRE0RM"
+        };
+
+        let currentRoomId = null;
+        let isTextMode = false;
+        let previewInterval = null;
+        let previewTimeout = null;
+        let isSoundEnabled = false;
+        let lastPlayedSecond = -1;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        try {
+            if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+            scanRooms(); // สแกนหาห้องทันทีที่เปิด
+        } catch (e) { console.error("Firebase Error:", e); }
+
+        // --- ฟังก์ชัน 1: สแกนหาห้องทั้งหมด ---
+        function scanRooms() {
+            const listContainer = document.getElementById('roomListContainer');
+            listContainer.innerHTML = '<div style="color:#aaa;">Scanning... <i class="fas fa-spinner fa-spin"></i></div>';
+            
+            firebase.database().ref('/').once('value').then(snapshot => {
+                listContainer.innerHTML = ''; // ล้างค่าเก่า
+                const data = snapshot.val();
+                
+                if (!data) {
+                    listContainer.innerHTML = '<div style="color:#ff5252;">ไม่พบข้อมูลห้องในระบบ</div>';
+                    return;
+                }
+
+                let found = false;
+                Object.keys(data).forEach(key => {
+                    // กรองเอาเฉพาะ key ที่ขึ้นต้นด้วย room_
+                    if (key.startsWith('room_')) {
+                        found = true;
+                        const roomData = data[key];
+                        // เช็คสถานะ
+                        let statusText = "ว่าง (Idle)";
+                        let statusColor = "#aaa";
+                        if (roomData.mode === 'running') { statusText = "กำลังใช้งาน"; statusColor = "#00e676"; }
+                        else if (roomData.mode === 'stop') { statusText = "หยุด"; statusColor = "#ff5252"; }
+
+                        const div = document.createElement('div');
+                        div.className = 'room-item';
+                        div.innerHTML = `
+                            <div style="display:flex; flex-direction:column;">
+                                <div style="color:#fff; font-size:14px; font-family:monospace;">${key}</div>
+                                <div style="color:${statusColor}; font-size:11px;">Status: ${statusText}</div>
+                            </div>
+                            <button class="btn-takeover" onclick="takeoverRoom('${key}')">
+                                <i class="fas fa-bolt"></i> ACTIVE
+                            </button>
+                        `;
+                        listContainer.appendChild(div);
+                    }
+                });
+
+                if(!found) listContainer.innerHTML = '<div style="color:#555;">ไม่มีห้อง Active</div>';
+            });
+        }
+
+        // --- ฟังก์ชัน 2: ยึดการควบคุมห้อง ---
+        function takeoverRoom(roomId) {
+            currentRoomId = roomId;
+            
+            // เปิดการใช้งานแผงควบคุม
+            const panel = document.getElementById('controlPanel');
+            panel.classList.add('active-control');
+            panel.style.opacity = "1";
+            panel.style.pointerEvents = "all";
+            panel.style.borderColor = "var(--primary)";
+
+            // อัปเดตสถานะ
+            setStatus(true, "Controlling: " + roomId);
+            
+            // สร้าง URL แสดงผล
+            const baseUrl = window.location.href.split('/').slice(0,-1).join('/') + '/';
+            document.getElementById('overlayLink').value = `${baseUrl}overlay.html?id=${currentRoomId}`;
+            
+            alert(`✅ ยึดการควบคุมห้อง ${roomId} เรียบร้อย!`);
+        }
+
+        // --- ฟังก์ชัน 3: การทำงานพื้นฐาน (เหมือน User) ---
+        function setStatus(isOnline, text) {
+            const dot = document.getElementById('statusDot');
+            const txt = document.getElementById('statusText');
+            if(isOnline) { dot.classList.add('online'); txt.innerText = text; txt.style.color = "#00e676"; }
+            else { dot.classList.remove('online'); txt.innerText = text; txt.style.color = "#ff5252"; }
+        }
+
+        function copyLink() {
+            const copyText = document.getElementById("overlayLink");
+            if (!copyText.value) return;
+            copyText.select(); navigator.clipboard.writeText(copyText.value);
+            const btn = document.querySelector('.btn-copy-small'); const oldText = btn.innerText;
+            btn.innerText = "COPIED!"; btn.style.background = "#00e676";
+            setTimeout(() => { btn.innerText = oldText; btn.style.background = "#333"; }, 1000);
+        }
+
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            const btn = document.getElementById('soundToggleBtn');
+            if (isSoundEnabled) {
+                btn.classList.add('active'); btn.innerHTML = '<i class="fas fa-volume-up"></i> ON';
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+            } else {
+                btn.classList.remove('active'); btn.innerHTML = '<i class="fas fa-volume-mute"></i> OFF';
+            }
+        }
+
+        function playSimulatedBeep(freq = 440, type = 'sine') {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.value = freq; osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1); osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playSelectedSound(soundName) {
+            if (soundName === 'sound1') playSimulatedBeep(800, 'sine');
+            else if (soundName === 'sound2') playSimulatedBeep(600, 'square');
+            else if (soundName === 'sound3') playSimulatedBeep(1000, 'sawtooth');
+            else if (soundName === 'sound4') playSimulatedBeep(400, 'triangle');
+            else playSimulatedBeep(200, 'sine');
+        }
+
+        function selectGame(gameName, defaultTime, btnElement) {
+            document.getElementById('gameTitle').innerText = gameName;
+            document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            if (gameName === 'Talk') {
+                isTextMode = true;
+                document.getElementById('timer-controls').classList.add('hide-box');
+                document.getElementById('text-controls').classList.remove('hide-box');
+                resetPreview();
+                document.getElementById('preview-display').innerText = "พิมพ์ข้อความ...";
+                document.getElementById('preview-display').style.fontSize = "30px";
+                document.getElementById('preview-display').style.color = "#aaa";
+            } else {
+                isTextMode = false;
+                document.getElementById('timer-controls').classList.remove('hide-box');
+                document.getElementById('text-controls').classList.add('hide-box');
+                document.getElementById('sec').value = defaultTime;
+                resetPreview();
+                updatePreviewStatic();
+            }
+        }
+
+        function updatePreviewStatic() {
+            if(!isTextMode) {
+                const previewEl = document.getElementById('preview-display');
+                previewEl.innerText = document.getElementById('sec').value;
+                previewEl.className = ""; previewEl.style.fontSize = "70px"; previewEl.style.color = "white";
+            }
+        }
+
+        function startPreviewSimulation(duration, gameName) {
+            const previewEl = document.getElementById('preview-display');
+            const startTime = new Date().getTime();
+            const targetTime = startTime + (duration * 1000) + 2500; 
+            const soundThreshold = parseInt(document.getElementById('soundThreshold').value) || 10;
+            const selectedSound = document.getElementById('soundSelect').value;
+            lastPlayedSecond = -1;
+
+            if(previewInterval) clearInterval(previewInterval);
+            if(previewTimeout) clearTimeout(previewTimeout);
+            previewEl.classList.remove('hidden'); previewEl.style.color = "white";
+
+            previewInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const timeSinceStart = now - startTime;
+
+                if (timeSinceStart < 2500) {
+                    previewEl.className = "preview-intro";
+                    if (gameName.includes('Roblox')) previewEl.innerText = "เริ่มนับถอยหลัง";
+                    else if (gameName.includes('OnlyUp')) previewEl.innerText = "FLY MODE";
+                    else previewEl.innerText = "ARE YOU READY?";
+                } else {
+                    const diff = targetTime - now;
+                    if (diff <= 0) {
+                        previewEl.innerText = "0"; previewEl.className = "preview-static-red";
+                        if (isSoundEnabled && lastPlayedSecond !== 0) { playSelectedSound(selectedSound); lastPlayedSecond = 0; }
+                        clearInterval(previewInterval);
+                        previewTimeout = setTimeout(() => { previewEl.classList.add('hidden'); }, 2000);
+                    } else {
+                        const secondsLeft = Math.ceil(diff / 1000);
+                        previewEl.innerText = secondsLeft;
+                        if (isSoundEnabled && secondsLeft <= soundThreshold && secondsLeft !== lastPlayedSecond) { playSelectedSound(selectedSound); lastPlayedSecond = secondsLeft; }
+                        if (secondsLeft <= 3) { previewEl.className = "preview-panic"; } else { previewEl.className = ""; }
+                    }
+                }
+            }, 50);
+        }
+
+        function resetPreview() {
+            if(previewInterval) clearInterval(previewInterval); if(previewTimeout) clearTimeout(previewTimeout);
+            const previewEl = document.getElementById('preview-display');
+            previewEl.classList.remove('hidden'); previewEl.className = ""; previewEl.style.color = "white";
+        }
+
+        function showTextPreview(msg) {
+            const previewEl = document.getElementById('preview-display');
+            if(previewInterval) clearInterval(previewInterval); if(previewTimeout) clearTimeout(previewTimeout);
+            previewEl.innerText = msg; previewEl.className = "preview-text-msg"; previewEl.classList.remove('hidden');
+            previewTimeout = setTimeout(() => { previewEl.classList.add('hidden'); }, 5000);
+        }
+
+        function handleStart() {
+            if (!currentRoomId) return alert("กรุณาเลือกห้องด้านบนก่อน");
+            if (isTextMode) return;
+            const duration = parseInt(document.getElementById('sec').value);
+            const now = new Date().getTime();
+            const targetTime = now + (duration * 1000) + 2500; 
+            const gameName = document.getElementById('gameTitle').innerText;
+            const soundThreshold = parseInt(document.getElementById('soundThreshold').value) || 10;
+            const selectedSound = document.getElementById('soundSelect').value;
+            const soundOn = isSoundEnabled;
+
+            startPreviewSimulation(duration, gameName);
+            firebase.database().ref(currentRoomId).set({
+                mode: 'running', target: targetTime, duration: duration, game: gameName, timestamp: now,
+                soundConfig: { enabled: soundOn, threshold: soundThreshold, type: selectedSound }
+            });
+        }
+
+        function handleReset() {
+            if (!currentRoomId) return;
+            resetPreview();
+            if(!isTextMode) updatePreviewStatic();
+            else {
+                const el = document.getElementById('preview-display');
+                el.innerText = "พิมพ์ข้อความ..."; el.style.fontSize = "30px"; el.style.color = "#aaa";
+            }
+            firebase.database().ref(currentRoomId).set({ mode: 'stop', target: 0 });
+        }
+
+        function handleSendText() {
+            if (!currentRoomId) return alert("กรุณาเลือกห้องด้านบนก่อน");
+            if (!isTextMode) return;
+            const msg = document.getElementById('textMsg').value;
+            if (!msg.trim()) return alert("กรุณาพิมพ์ข้อความ");
+            const now = new Date().getTime();
+            showTextPreview(msg);
+            firebase.database().ref(currentRoomId).set({
+                mode: 'text', message: msg, timestamp: now, duration: 5
+            });
+            document.getElementById('textMsg').value = "";
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (isTextMode && e.key === "Enter") { e.preventDefault(); handleSendText(); }
+            if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") return;
+            if (!isTextMode) {
+                if (e.key === " ") { e.preventDefault(); handleStart(); }
+                if (e.key === "r" || e.key === "R") { handleReset(); }
+            }
+        });
+    </script>
+</body>
+</html>
