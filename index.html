@@ -3,44 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Remote Control</title>
+    <title>Control Game By STiMEXs</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; text-align: center; background: #f2f2f2; color: #333; }
-        .container { background: white; padding: 30px; border-radius: 15px; max-width: 400px; margin: 20px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { margin-top: 0; color: #444; }
-        .input-box { margin: 20px 0; }
-        input[type="number"] { font-size: 40px; width: 100px; text-align: center; padding: 10px; border-radius: 10px; border: 2px solid #ddd; color: #007bff; font-weight: bold; }
-        label { display: block; margin-top: 5px; color: #666; font-size: 14px; }
-        .btn-group { display: flex; gap: 10px; margin-top: 25px; }
-        button { flex: 1; padding: 15px; font-size: 18px; border-radius: 10px; border: none; cursor: pointer; color: white; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            margin: 0; padding: 0; 
+            background: #f0f2f5; 
+            height: 100vh; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Navbar --- */
+        .navbar {
+            height: 60px; background: #1a1a1a; color: white; display: flex;
+            align-items: center; justify-content: space-between; padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 1000;
+        }
+        .nav-brand { font-size: 20px; font-weight: bold; color: #00e676; display: flex; align-items: center; gap: 10px; }
+        .nav-credit { font-size: 14px; color: #aaa; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; }
+
+        /* --- Wrapper --- */
+        .content-wrapper { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 250px; background: #ffffff; border-right: 1px solid #ddd;
+            padding: 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
+        }
+        .sidebar h2 { font-size: 16px; color: #555; margin-bottom: 10px; text-transform: uppercase; }
+        .game-btn {
+            padding: 15px; border: 2px solid #eee; border-radius: 10px; background: #f9f9f9;
+            cursor: pointer; font-size: 16px; font-weight: bold; color: #555;
+            text-align: left; transition: 0.2s; display: flex; align-items: center; gap: 10px;
+        }
+        .game-btn:hover { background: #eef; border-color: #ccf; }
+        .game-btn.active { background: #e6f7ff; border-color: #007bff; color: #007bff; }
+
+        /* --- Main Content --- */
+        .main-panel {
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            padding: 20px; background: #f0f2f5;
+        }
+        .container { 
+            background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 450px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;
+        }
+        
+        h1 { margin-top: 0; color: #333; font-size: 24px; }
+        .current-game { color: #007bff; font-weight: bold; }
+
+        .input-box { margin: 30px 0; }
+        input[type="number"] { 
+            font-size: 50px; width: 140px; text-align: center; 
+            padding: 10px; border-radius: 15px; border: 2px solid #ddd; 
+            color: #333; font-weight: bold; outline: none;
+        }
+        input[type="number"]:focus { border-color: #007bff; }
+        label { display: block; margin-top: 10px; color: #888; font-size: 14px; }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 30px; }
+        button { 
+            flex: 1; padding: 15px; font-size: 18px; border-radius: 12px; 
+            border: none; cursor: pointer; color: white; 
+            font-weight: bold; transition: 0.2s; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
         button:active { transform: scale(0.95); }
-        .btn-start { background: #28a745; }
-        .btn-reset { background: #dc3545; }
-        #status { margin-top: 20px; color: #888; font-size: 14px; min-height: 20px; }
+        .btn-start { background: linear-gradient(135deg, #28a745, #218838); }
+        .btn-reset { background: linear-gradient(135deg, #dc3545, #c82333); }
+
+        #status { margin-top: 25px; color: #888; font-size: 14px; min-height: 20px; }
+
+        /* 🔥 ส่วน Link ด้านล่าง 🔥 */
         .link-section { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
-        .link-input { width: 90%; padding: 10px; font-size: 12px; color: #555; border: 1px solid #ccc; border-radius: 5px; background: #f9f9f9; }
-        .btn-copy { background: #6c757d; font-size: 14px; padding: 8px; margin-top: 10px; width: auto; flex: none; display: inline-block; }
+        .link-input { 
+            width: 100%; padding: 10px; font-size: 12px; color: #555; 
+            border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9; 
+            text-align: center; margin-bottom: 10px;
+        }
+        .btn-copy { 
+            background: #6c757d; font-size: 14px; padding: 10px; width: 100%; 
+            border-radius: 8px; color: white; border: none; cursor: pointer; 
+        }
+        .btn-copy:hover { background: #5a6268; }
+
+        @media (max-width: 700px) {
+            .content-wrapper { flex-direction: column; }
+            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; border-bottom: 1px solid #ddd; border-right: none; height: auto; }
+            .game-btn { flex: 0 0 auto; min-width: 120px; justify-content: center; padding: 10px; font-size: 14px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📱 รีโมทคุมเวลา</h1>
-        <div class="input-box">
-            <input type="number" id="sec" value="60" min="1">
-            <label>วินาทีที่ต้องการนับ</label>
+
+    <nav class="navbar">
+        <div class="nav-brand">🎮 Control Game</div>
+        <div class="nav-credit">By : STiMEXs</div>
+    </nav>
+
+    <div class="content-wrapper">
+        <div class="sidebar">
+            <h2>รายชื่อเกม</h2>
+            <div class="game-btn active" onclick="selectGame('Roblox', 60, this)">🧱 Roblox</div>
+            <div class="game-btn" onclick="selectGame('OnlyUp', 10, this)">⬆️ OnlyUp</div>
+            <div class="game-btn" onclick="selectGame('Horror', 60, this)">👻 Horror</div>
+            <div class="game-btn" onclick="selectGame('Just Chat', 600, this)">💬 Talk</div>
         </div>
-        <div class="btn-group">
-            <button class="btn-reset" onclick="sendReset()">⏹️ Reset (0)</button>
-            <button class="btn-start" onclick="sendStart()">▶️ Start (เริ่ม)</button>
-        </div>
-        <div id="status">สถานะ: พร้อมเชื่อมต่อ...</div>
-        <div class="link-section">
-            <p style="font-size: 14px; color: #666; margin-bottom: 5px;">👇 ลิงก์สำหรับใส่ใน OBS / TIKTOK LIVE</p>
-            <input type="text" id="overlayLink" class="link-input" readonly>
-            <br>
-            <button class="btn-copy" onclick="copyLink()">📋 ก๊อปปี้ลิงก์</button>
+
+        <div class="main-panel">
+            <div class="container">
+                <h1>ตั้งเวลา: <span id="gameTitle" class="current-game">Roblox</span></h1>
+                
+                <div class="input-box">
+                    <input type="number" id="sec" value="60" min="1">
+                    <label>วินาทีที่ต้องการนับ</label>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-reset" onclick="sendReset()">⏹️ Reset</button>
+                    <button class="btn-start" onclick="sendStart()">▶️ Start</button>
+                </div>
+
+                <div id="status">สถานะ: พร้อมเชื่อมต่อ...</div>
+                
+                <div class="link-section">
+                    <label style="margin-bottom: 5px; display: block;">👇 ลิงก์สำหรับใส่ใน OBS / TikTok Live</label>
+                    <input type="text" id="overlayLink" class="link-input" readonly>
+                    <button class="btn-copy" onclick="copyLink()">📋 คัดลอกลิงก์</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -61,30 +156,38 @@
             if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
             const db = firebase.database();
             document.getElementById('status').innerText = "สถานะ: เชื่อมต่อ Server แล้ว ✅";
+            
+            // แสดงลิงก์ในช่องอัตโนมัติ
+            const fixedLink = window.location.origin + "/overlay.html";
+            document.getElementById('overlayLink').value = fixedLink;
+            
         } catch (e) {
             document.getElementById('status').innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อ ❌";
         }
 
-        const fixedLink = window.location.origin + "/overlay.html";
-        document.getElementById('overlayLink').value = fixedLink;
+        function selectGame(gameName, defaultTime, btnElement) {
+            document.getElementById('gameTitle').innerText = gameName;
+            document.getElementById('sec').value = defaultTime;
+            document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+        }
 
         function sendStart() {
             const sec = parseInt(document.getElementById('sec').value) || 0;
             if (sec <= 0) return alert("กรุณาใส่วินาทีให้ถูกต้อง");
 
             const now = new Date().getTime();
-            
-            // 🔥 ตั้งค่า Intro 3 วินาที (สำหรับโชว์คำว่า เตรียมบิน)
             const introTime = 3000; 
-            
             const targetTime = now + (sec * 1000) + introTime; 
+            const gameName = document.getElementById('gameTitle').innerText;
 
             firebase.database().ref('timer').set({
                 mode: 'running',
                 target: targetTime,
-                duration: sec
+                duration: sec,
+                game: gameName 
             });
-            document.getElementById('status').innerText = "สถานะ: กำลังนับถอยหลัง... ⏳";
+            document.getElementById('status').innerText = `กำลังนับถอยหลัง (${gameName})... ⏳`;
         }
 
         function sendReset() {
@@ -95,11 +198,12 @@
             document.getElementById('status').innerText = "สถานะ: รีเซ็ตเป็น 0 แล้ว ⏹️";
         }
 
+        // ฟังก์ชันคัดลอกลิงก์
         function copyLink() {
             const copyText = document.getElementById("overlayLink");
             copyText.select();
             document.execCommand("copy");
-            alert("ก๊อปปี้ลิงก์เรียบร้อย! นำไปวางใน OBS ได้เลย");
+            alert("คัดลอกลิงก์เรียบร้อย! นำไปวางใน OBS ได้เลยครับ");
         }
     </script>
 </body>
