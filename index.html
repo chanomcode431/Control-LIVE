@@ -12,243 +12,87 @@
     
     <style>
         :root {
-            --bg-dark: #121212;
-            --bg-card: #1e1e1e;
-            --bg-sidebar: #181818;
-            --primary: #00e676;
-            --danger: #ff5252;
-            --text-main: #ffffff;
-            --text-muted: #b0bec5;
-            --accent-blue: #2979ff;
-            --accent-orange: #ff9100;
+            --bg-dark: #121212; --bg-card: #1e1e1e; --bg-sidebar: #181818;
+            --primary: #00e676; --danger: #ff5252; --text-main: #ffffff;
+            --text-muted: #b0bec5; --accent-blue: #2979ff; --accent-orange: #ff9100;
         }
 
         * { box-sizing: border-box; }
-        body { 
-            font-family: 'Kanit', sans-serif; 
-            margin: 0; padding: 0; 
-            background: var(--bg-dark); 
-            color: var(--text-main);
-            height: 100vh; 
-            display: flex; 
-            overflow: hidden;
-        }
+        body { font-family: 'Kanit', sans-serif; margin: 0; padding: 0; background: var(--bg-dark); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
 
-        /* --- Sidebar --- */
-        .sidebar { 
-            width: 260px; 
-            background: var(--bg-sidebar); 
-            border-right: 1px solid #333; 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-            z-index: 10;
-        }
-
-        .brand {
-            font-size: 20px; 
-            font-weight: 600; 
-            color: var(--primary); 
-            margin-bottom: 20px;
-            display: flex; align-items: center; gap: 10px;
-        }
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--bg-sidebar); border-right: 1px solid #333; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 2px 0 10px rgba(0,0,0,0.3); z-index: 10; }
+        .brand { font-size: 20px; font-weight: 600; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .menu-label { font-size: 12px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
         
-        .menu-label {
-            font-size: 12px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;
-        }
-
-        .game-btn {
-            padding: 12px 15px; 
-            border-radius: 8px; 
-            background: transparent;
-            color: var(--text-muted);
-            cursor: pointer; 
-            font-size: 16px; 
-            font-weight: 400; 
-            text-align: left; 
-            transition: all 0.2s ease;
-            display: flex; align-items: center; gap: 12px;
-            border: 1px solid transparent;
-        }
-
+        .game-btn { padding: 12px 15px; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 16px; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px; border: 1px solid transparent; }
         .game-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .game-btn.active { background: rgba(0, 230, 118, 0.15); color: var(--primary); border: 1px solid rgba(0, 230, 118, 0.3); font-weight: 600; }
+
+        /* Content */
+        .main-content { flex: 1; display: flex; flex-direction: column; padding: 30px; overflow-y: auto; align-items: center; }
+        .dashboard-card { background: var(--bg-card); border-radius: 20px; padding: 40px; width: 100%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333; }
         
-        .game-btn.active { 
-            background: rgba(0, 230, 118, 0.15); 
-            color: var(--primary); 
-            border: 1px solid rgba(0, 230, 118, 0.3);
-            font-weight: 600;
-        }
-
-        /* --- Main Content --- */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 30px;
-            overflow-y: auto;
-            align-items: center;
-        }
-
-        .dashboard-card {
-            background: var(--bg-card);
-            border-radius: 20px;
-            padding: 40px;
-            width: 100%;
-            max-width: 600px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #333;
-        }
-
-        /* --- Header & Status --- */
-        .header-row {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
-        }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .header-title h1 { margin: 0; font-size: 1.5rem; font-weight: 300; }
         .header-title span { color: var(--primary); font-weight: 600; }
         
-        .status-badge {
-            font-size: 12px;
-            background: rgba(0,0,0,0.3);
-            padding: 5px 12px;
-            border-radius: 20px;
-            display: flex; align-items: center; gap: 6px;
-            color: var(--text-muted);
-        }
+        .status-badge { font-size: 12px; background: rgba(0,0,0,0.3); padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; }
         .status-dot.online { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
 
-        /* --- Preview Monitor --- */
-        #timer-container {
-            background: #000;
-            border: 4px solid #333;
-            border-radius: 12px;
-            height: 180px;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 30px;
-            position: relative;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-            overflow: hidden;
-        }
+        /* Preview */
+        #timer-container { background: #000; border: 4px solid #333; border-radius: 12px; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; position: relative; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); overflow: hidden; }
+        #preview-display { font-family: 'Black Ops One', 'Kanit', sans-serif; font-size: 70px; font-weight: 900; color: white; line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5); transition: opacity 0.5s ease-out; text-align: center; width: 100%; }
         
-        #preview-display {
-            font-family: 'Black Ops One', 'Kanit', sans-serif;
-            font-size: 70px; 
-            font-weight: 900; 
-            color: white;
-            line-height: 1; 
-            text-shadow: 0 0 10px rgba(255,255,255,0.5);
-            transition: opacity 0.5s ease-out;
-            text-align: center;
-            width: 100%;
-        }
-
-        /* Styles for Preview */
         .preview-intro { color: #ffd700 !important; font-size: 36px !important; letter-spacing: 2px; }
         .preview-panic { color: #ff0000 !important; animation: panic-pulse 0.5s infinite; text-shadow: 0 0 20px red !important; }
         .preview-static-red { color: #ff0000 !important; animation: none !important; }
         .preview-text-msg { color: var(--primary) !important; font-size: 32px !important; padding: 20px; line-height: 1.4 !important; }
-        
-        @keyframes panic-pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
-        }
+        @keyframes panic-pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
 
-        /* --- Controls --- */
+        /* Controls */
         .control-group { margin-bottom: 20px; text-align: center; }
         .control-label { display: block; margin-bottom: 10px; color: var(--text-muted); font-size: 14px; }
-        
-        /* Input Styling */
-        input[type="number"] { 
-            background: #2a2a2a; border: 2px solid #444; color: white;
-            font-size: 36px; width: 100%; max-width: 200px; text-align: center;
-            padding: 10px; border-radius: 12px; font-weight: bold; outline: none; transition: 0.3s;
-        }
-        input[type="number"]:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 230, 118, 0.2); }
-
-        textarea {
-            background: #2a2a2a; border: 2px solid #444; color: white;
-            width: 100%; padding: 15px; border-radius: 12px; font-size: 18px; 
-            resize: none; outline: none; transition: 0.3s;
-        }
+        input[type="number"], select { background: #2a2a2a; border: 2px solid #444; color: white; font-size: 18px; width: 100%; text-align: center; padding: 10px; border-radius: 12px; font-weight: bold; outline: none; transition: 0.3s; }
+        input[type="number"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 230, 118, 0.2); }
+        #sec { font-size: 36px; max-width: 200px; }
+        textarea { background: #2a2a2a; border: 2px solid #444; color: white; width: 100%; padding: 15px; border-radius: 12px; font-size: 18px; resize: none; outline: none; transition: 0.3s; }
         textarea:focus { border-color: var(--accent-blue); }
+
+        /* Sound Box */
+        .sound-box { background: rgba(0,0,0,0.2); border: 1px dashed #444; border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .sound-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
+        .toggle-btn { background: #333; color: #aaa; border: 1px solid #555; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s; width: auto; flex: unset; }
+        .toggle-btn.active { background: var(--primary); color: #000; font-weight: bold; border-color: var(--primary); }
 
         /* Buttons */
         .btn-group { display: flex; gap: 15px; margin-top: 20px; }
-        
-        button {
-            flex: 1; padding: 18px; border: none; border-radius: 12px;
-            font-size: 16px; font-weight: 600; cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-            text-transform: uppercase; letter-spacing: 1px;
-            color: white;
-        }
+        button { flex: 1; padding: 18px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; text-transform: uppercase; letter-spacing: 1px; color: white; }
         button:active { transform: scale(0.96); }
-
-        .btn-start { 
-            background: linear-gradient(135deg, #00e676, #00b359); 
-            box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);
-        }
-        .btn-reset { 
-            background: #333; color: #ff5252; border: 1px solid #ff5252;
-        }
+        .btn-start { background: linear-gradient(135deg, #00e676, #00b359); box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); }
+        .btn-reset { background: #333; color: #ff5252; border: 1px solid #ff5252; }
         .btn-reset:hover { background: #ff5252; color: white; }
-        
-        .btn-send { 
-            background: linear-gradient(135deg, #2979ff, #1565c0); 
-            box-shadow: 0 4px 15px rgba(41, 121, 255, 0.4);
-        }
+        .btn-send { background: linear-gradient(135deg, #2979ff, #1565c0); box-shadow: 0 4px 15px rgba(41, 121, 255, 0.4); }
 
-        /* --- Footer / Link --- */
-        .footer-section {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #333;
-        }
-        .link-box {
-            display: flex; background: #121212; padding: 5px; border-radius: 8px; border: 1px solid #333;
-            align-items: center; margin-bottom: 10px;
-        }
-        .link-input {
-            flex: 1; background: transparent; border: none; color: #888; 
-            padding: 8px; font-size: 12px; outline: none;
-        }
-        .btn-copy-small {
-            background: #333; color: white; font-size: 10px; padding: 6px 12px;
-            border-radius: 6px; margin: 0; flex: 0; width: auto; box-shadow: none;
-        }
+        /* ปุ่มสร้างห้องแบบใหม่ */
+        .btn-generate { width: 100%; padding: 15px; background: linear-gradient(135deg, #FF9800, #F57C00); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; margin-bottom: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(245, 124, 0, 0.3); display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; }
+        .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245, 124, 0, 0.4); }
+        .btn-generate:active { transform: scale(0.98); }
+
+        /* Footer */
+        .footer-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #333; }
+        .link-box { display: flex; background: #121212; padding: 5px; border-radius: 8px; border: 1px solid #333; align-items: center; margin-bottom: 10px; }
+        .link-input { flex: 1; background: transparent; border: none; color: #888; padding: 8px; font-size: 12px; outline: none; }
+        .btn-copy-small { background: #333; color: white; font-size: 10px; padding: 6px 12px; border-radius: 6px; margin: 0; flex: 0; width: auto; box-shadow: none; }
         .btn-copy-small:hover { background: #555; }
         
-        .btn-new-room {
-            margin-top: 10px; background: transparent; color: #555; font-size: 12px; padding: 5px;
-            border: 1px dashed #444; width: 100%; text-transform: none; letter-spacing: 0;
-        }
-        .btn-new-room:hover { border-color: #777; color: #777; }
-
-        /* --- Special Box for OnlyUp --- */
-        .ahk-box {
-            background: rgba(255, 145, 0, 0.1);
-            border: 1px solid var(--accent-orange);
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 15px;
-            text-align: left;
-        }
+        .ahk-box { background: rgba(255, 145, 0, 0.1); border: 1px solid var(--accent-orange); border-radius: 12px; padding: 15px; margin-top: 15px; text-align: left; }
         .ahk-title { color: var(--accent-orange); font-size: 14px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
 
         .hidden { opacity: 0 !important; }
         .hide-box { display: none !important; }
-
-        @media (max-width: 768px) {
-            body { flex-direction: column; overflow-y: auto; }
-            .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; }
-            .game-btn { min-width: 120px; justify-content: center; }
-            .main-content { padding: 15px; }
-            .dashboard-card { padding: 20px; }
-        }
+        @media (max-width: 768px) { body { flex-direction: column; overflow-y: auto; } .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; } .game-btn { min-width: 120px; justify-content: center; } .main-content { padding: 15px; } .dashboard-card { padding: 20px; } }
     </style>
 </head>
 <body>
@@ -272,8 +116,15 @@
             </div>
         </div>
 
-        <div style="margin-top: auto; font-size: 11px; color: #444; text-align: center;">
-            System v2.0 | Multi-Room Support
+        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid #333;">
+            <div class="menu-label" style="color: #ff5252;">ADMIN ZONE</div>
+            <div class="game-btn" onclick="adminLogin()">
+                <i class="fas fa-user-shield"></i> เข้าสู่ระบบแอดมิน
+            </div>
+        </div>
+        
+        <div style="margin-top: 10px; font-size: 11px; color: #444; text-align: center;">
+            System v2.6 | Auto-Clear Room
         </div>
     </div>
 
@@ -281,9 +132,7 @@
         <div class="dashboard-card">
             
             <div class="header-row">
-                <div class="header-title">
-                    <h1>โหมด: <span id="gameTitle">Roblox</span></h1>
-                </div>
+                <div class="header-title"><h1>โหมด: <span id="gameTitle">Roblox</span></h1></div>
                 <div class="status-badge">
                     <div id="statusDot" class="status-dot"></div>
                     <span id="statusText">Connecting...</span>
@@ -298,20 +147,36 @@
             <div id="timer-controls" class="control-group">
                 <div class="control-label">ตั้งเวลา (วินาที)</div>
                 <input type="number" id="sec" value="60" min="1" onchange="updatePreviewStatic()">
+
+                <div class="sound-box" style="margin-top: 15px;">
+                    <div class="sound-row">
+                        <div class="control-label" style="margin:0; font-size: 16px; color: white;"><i class="fas fa-volume-up"></i> ตั้งค่าเสียงนับถอยหลัง</div>
+                        <button id="soundToggleBtn" class="toggle-btn" onclick="toggleSound()"><i class="fas fa-volume-mute"></i> OFF</button>
+                    </div>
+                    <div class="sound-row">
+                        <select id="soundSelect">
+                            <option value="sound1">🎵 เสียงเตือน 1 (Beep)</option>
+                            <option value="sound2">🎵 เสียงเตือน 2 (Tick)</option>
+                            <option value="sound3">🎵 เสียงเตือน 3 (Alarm)</option>
+                            <option value="sound4">🎵 เสียงเตือน 4 (Bell)</option>
+                            <option value="sound5">🎵 เสียงเตือน 5 (Drum)</option>
+                        </select>
+                    </div>
+                    <div class="sound-row">
+                        <span style="font-size: 12px; color: #aaa; white-space: nowrap;">เริ่มดังเมื่อเหลือ (วินาที):</span>
+                        <input type="number" id="soundThreshold" value="10" min="1" max="60" style="width: 80px; font-size: 14px;">
+                    </div>
+                </div>
                 
                 <div class="btn-group">
-                    <button class="btn-reset" onclick="handleReset()">
-                        <i class="fas fa-stop"></i> Reset (R)
-                    </button>
-                    <button class="btn-start" onclick="handleStart()">
-                        <i class="fas fa-play"></i> START (Space)
-                    </button>
+                    <button class="btn-reset" onclick="handleReset()"><i class="fas fa-stop"></i> Reset (R)</button>
+                    <button class="btn-start" onclick="handleStart()"><i class="fas fa-play"></i> START (Space)</button>
                 </div>
 
                 <div id="ahk-section" class="ahk-box hide-box">
                     <div class="ahk-title"><i class="fas fa-robot"></i> AutoHotkey: Room ID Setup</div>
                     <div class="link-box" style="background: rgba(0,0,0,0.4); border-color: #555;">
-                        <input type="text" id="onlyUpRoomId" class="link-input" style="color: var(--accent-orange); font-weight: bold;" readonly>
+                        <input type="text" id="onlyUpRoomId" class="link-input" style="color: var(--accent-orange); font-weight: bold;" placeholder="กดสร้างห้องก่อน..." readonly>
                         <button class="btn-copy-small" style="background: var(--accent-orange);" onclick="copyOnlyUpRoomId()">COPY ID</button>
                     </div>
                     <div style="font-size: 11px; color: #888;">นำ ID นี้ไปใส่ในไฟล์ .ahk ของคุณตรงส่วน <b>RoomID := "..."</b></div>
@@ -321,25 +186,22 @@
             <div id="text-controls" class="control-group hide-box">
                 <div class="control-label">ข้อความที่จะส่ง (โชว์ 5 วินาที)</div>
                 <textarea id="textMsg" rows="2" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
-                
                 <div class="btn-group">
-                    <button class="btn-send" onclick="handleSendText()">
-                        <i class="fas fa-paper-plane"></i> ส่งขึ้นจอ (Enter)
-                    </button>
+                    <button class="btn-send" onclick="handleSendText()"><i class="fas fa-paper-plane"></i> ส่งขึ้นจอ (Enter)</button>
                 </div>
             </div>
 
             <div class="footer-section">
-                <div class="control-label" style="font-size: 12px;">🔗 Overlay Link (ใส่ใน OBS)</div>
-                <div class="link-box">
-                    <input type="text" id="overlayLink" class="link-input" readonly>
-                    <button class="btn-copy-small" onclick="copyLink()">COPY URL</button>
-                </div>
-                <button class="btn-new-room" onclick="generateNewRoom()">
-                    <i class="fas fa-sync"></i> สร้างห้องใหม่ / รีเซ็ตลิ้งค์
+                <button class="btn-generate" onclick="generateNewRoom()">
+                    <i class="fas fa-sync-alt"></i> สร้างห้องใหม่ / เปลี่ยน URL (Reset)
                 </button>
-            </div>
 
+                <div class="control-label" style="font-size: 12px;">🔗 Overlay Link (สำหรับใส่ใน OBS)</div>
+                <div class="link-box">
+                    <input type="text" id="overlayLink" class="link-input" placeholder="กดปุ่มสีส้มด้านบน เพื่อสร้างลิ้งค์..." readonly>
+                    <button class="btn-copy-small" onclick="copyLink()">COPY</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -351,14 +213,16 @@
             projectId: "control-tiktok",
             storageBucket: "control-tiktok.firebasestorage.app",
             messagingSenderId: "771700169818",
-            appId: "1:771700169818:web:abe98c40c5b1baabab0c63",
-            measurementId: "G-DZ76HRE0RM"
+            appId: "1:771700169818:web:abe98c40c5b1baabab0c63"
         };
 
         let currentRoomId = "";
         let isTextMode = false;
         let previewInterval = null;
         let previewTimeout = null;
+        let isSoundEnabled = false;
+        let lastPlayedSecond = -1;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         try {
             if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
@@ -368,88 +232,119 @@
             setStatus(false, "Error");
         }
 
+        function adminLogin() {
+            const pass = prompt("🔒 กรุณาใส่รหัสผ่าน Admin:");
+            if(pass === "1324") window.location.href = "admin.html";
+            else if (pass !== null) alert("❌ รหัสผ่านไม่ถูกต้อง");
+        }
+
         function setStatus(isOnline, text) {
             const dot = document.getElementById('statusDot');
             const txt = document.getElementById('statusText');
-            if(isOnline) {
-                dot.classList.add('online');
-                txt.innerText = "Connected";
-                txt.style.color = "#00e676";
-            } else {
-                dot.classList.remove('online');
-                txt.innerText = text;
-                txt.style.color = "#ff5252";
-            }
+            if(isOnline) { dot.classList.add('online'); txt.innerText = "Connected"; txt.style.color = "#00e676"; }
+            else { dot.classList.remove('online'); txt.innerText = text; txt.style.color = "#ff5252"; }
         }
 
         function initRoom() {
             let savedRoom = localStorage.getItem('my_room_id');
             if (savedRoom) { currentRoomId = savedRoom; } 
-            else { generateNewRoom(); return; }
-            updateRoomUI();
         }
 
+        // 🔥 ฟังก์ชันสร้างห้อง + ลบห้องเก่า 🔥
         function generateNewRoom() {
-            const timestamp = new Date().getTime();
-            const randomStr = Math.random().toString(36).substring(2, 6);
-            currentRoomId = `room_${timestamp}_${randomStr}`;
-            localStorage.setItem('my_room_id', currentRoomId);
-            updateRoomUI();
+            // 1. เช็คและลบห้องเก่า
+            const oldRoomId = localStorage.getItem('my_room_id');
+            if (oldRoomId) {
+                firebase.database().ref(oldRoomId).remove()
+                    .then(() => console.log("ลบห้องเก่าเรียบร้อย: " + oldRoomId))
+                    .catch((err) => console.error("ลบห้องเก่าไม่สำเร็จ: ", err));
+            }
+
+            // 2. สร้างห้องใหม่
+            const btn = document.querySelector('.btn-generate');
+            const icon = btn.querySelector('i');
+            icon.classList.add('fa-spin');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> กำลังเปลี่ยน URL...';
+
+            setTimeout(() => {
+                const timestamp = new Date().getTime();
+                const randomStr = Math.random().toString(36).substring(2, 6);
+                currentRoomId = `room_${timestamp}_${randomStr}`;
+                
+                localStorage.setItem('my_room_id', currentRoomId);
+                updateRoomUI(); 
+                
+                btn.innerHTML = '<i class="fas fa-check"></i> เปลี่ยน URL เรียบร้อย!';
+                btn.style.background = "linear-gradient(135deg, #00e676, #00b359)"; 
+                
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> สร้างห้องใหม่ / เปลี่ยน URL (Reset)';
+                    btn.style.background = ""; 
+                    icon.classList.remove('fa-spin');
+                }, 1500);
+            }, 800);
         }
 
         function updateRoomUI() {
             const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '').replace('control.html', ''); 
             const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
             const fullLink = `${cleanBase}overlay.html?id=${currentRoomId}`;
-            
             document.getElementById('overlayLink').value = fullLink;
-            document.getElementById('onlyUpRoomId').value = currentRoomId; // อัปเดตช่อง Room ID
-            document.getElementById('roomIdDisplay').innerText = currentRoomId;
+            document.getElementById('onlyUpRoomId').value = currentRoomId; 
         }
 
         function copyLink() {
             const copyText = document.getElementById("overlayLink");
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(copyText.value);
-            alert("คัดลอก URL เรียบร้อย!");
+            if (!copyText.value) { alert("กรุณากดปุ่มสีส้ม 'สร้างห้องใหม่' ด้านบนก่อนครับ!"); return; }
+            copyText.select(); copyText.setSelectionRange(0, 99999); navigator.clipboard.writeText(copyText.value);
+            const btn = document.querySelector('.btn-copy-small'); const oldText = btn.innerText;
+            btn.innerText = "COPIED!"; btn.style.background = "#00e676";
+            setTimeout(() => { btn.innerText = oldText; btn.style.background = "#333"; }, 1000);
         }
-
+        
         function copyOnlyUpRoomId() {
             const copyText = document.getElementById("onlyUpRoomId");
-            copyText.select();
-            copyText.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(copyText.value);
-            alert("คัดลอก Room ID เรียบร้อย! นำไปใส่ในสคริปต์ AHK ได้เลย");
+            if (!copyText.value) { alert("กรุณากดปุ่ม 'สร้างห้องใหม่' เพื่อสร้าง ID ก่อนครับ"); return; }
+            copyText.select(); copyText.setSelectionRange(0, 99999); navigator.clipboard.writeText(copyText.value);
+            alert("คัดลอก Room ID เรียบร้อย!");
+        }
+
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            const btn = document.getElementById('soundToggleBtn');
+            if (isSoundEnabled) {
+                btn.classList.add('active'); btn.innerHTML = '<i class="fas fa-volume-up"></i> ON';
+                if(audioCtx.state === 'suspended') audioCtx.resume();
+            } else {
+                btn.classList.remove('active'); btn.innerHTML = '<i class="fas fa-volume-mute"></i> OFF';
+            }
+        }
+
+        function playSimulatedBeep(freq = 440, type = 'sine') {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.value = freq; osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1); osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playSelectedSound(soundName) {
+            if (soundName === 'sound1') playSimulatedBeep(800, 'sine');
+            else if (soundName === 'sound2') playSimulatedBeep(600, 'square');
+            else if (soundName === 'sound3') playSimulatedBeep(1000, 'sawtooth');
+            else if (soundName === 'sound4') playSimulatedBeep(400, 'triangle');
+            else playSimulatedBeep(200, 'sine');
         }
 
         function selectGame(gameName, defaultTime, btnElement) {
             document.getElementById('gameTitle').innerText = gameName;
             document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
-
-            // แสดง/ซ่อนช่อง ID สำหรับ OnlyUp
-            if(gameName === 'OnlyUp') {
-                document.getElementById('ahk-section').classList.remove('hide-box');
-            } else {
-                document.getElementById('ahk-section').classList.add('hide-box');
-            }
-
+            if(gameName === 'OnlyUp') { document.getElementById('ahk-section').classList.remove('hide-box'); } else { document.getElementById('ahk-section').classList.add('hide-box'); }
             if (gameName === 'Talk') {
-                isTextMode = true;
-                document.getElementById('timer-controls').classList.add('hide-box');
-                document.getElementById('text-controls').classList.remove('hide-box');
-                resetPreview();
-                document.getElementById('preview-display').innerText = "พิมพ์ข้อความ...";
-                document.getElementById('preview-display').style.fontSize = "30px";
-                document.getElementById('preview-display').style.color = "#aaa";
+                isTextMode = true; document.getElementById('timer-controls').classList.add('hide-box'); document.getElementById('text-controls').classList.remove('hide-box');
+                resetPreview(); document.getElementById('preview-display').innerText = "พิมพ์ข้อความ..."; document.getElementById('preview-display').style.fontSize = "30px"; document.getElementById('preview-display').style.color = "#aaa";
             } else {
-                isTextMode = false;
-                document.getElementById('timer-controls').classList.remove('hide-box');
-                document.getElementById('text-controls').classList.add('hide-box');
-                document.getElementById('sec').value = defaultTime;
-                resetPreview();
-                updatePreviewStatic();
+                isTextMode = false; document.getElementById('timer-controls').classList.remove('hide-box'); document.getElementById('text-controls').classList.add('hide-box');
+                document.getElementById('sec').value = defaultTime; resetPreview(); updatePreviewStatic();
             }
         }
 
@@ -457,9 +352,7 @@
             if(!isTextMode) {
                 const previewEl = document.getElementById('preview-display');
                 previewEl.innerText = document.getElementById('sec').value;
-                previewEl.className = "";
-                previewEl.style.fontSize = "70px";
-                previewEl.style.color = "white";
+                previewEl.className = ""; previewEl.style.fontSize = "70px"; previewEl.style.color = "white";
             }
         }
 
@@ -467,11 +360,13 @@
             const previewEl = document.getElementById('preview-display');
             const startTime = new Date().getTime();
             const targetTime = startTime + (duration * 1000) + 2500; 
+            const soundThreshold = parseInt(document.getElementById('soundThreshold').value) || 10;
+            const selectedSound = document.getElementById('soundSelect').value;
+            lastPlayedSecond = -1;
 
             if(previewInterval) clearInterval(previewInterval);
             if(previewTimeout) clearTimeout(previewTimeout);
-            previewEl.classList.remove('hidden');
-            previewEl.style.color = "white";
+            previewEl.classList.remove('hidden'); previewEl.style.color = "white";
 
             previewInterval = setInterval(() => {
                 const now = new Date().getTime();
@@ -485,20 +380,15 @@
                 } else {
                     const diff = targetTime - now;
                     if (diff <= 0) {
-                        previewEl.innerText = "0";
-                        previewEl.className = "preview-static-red";
+                        previewEl.innerText = "0"; previewEl.className = "preview-static-red";
+                        if (isSoundEnabled && lastPlayedSecond !== 0) { playSelectedSound(selectedSound); lastPlayedSecond = 0; }
                         clearInterval(previewInterval);
-                        previewTimeout = setTimeout(() => {
-                            previewEl.classList.add('hidden');
-                        }, 2000);
+                        previewTimeout = setTimeout(() => { previewEl.classList.add('hidden'); }, 2000);
                     } else {
                         const secondsLeft = Math.ceil(diff / 1000);
                         previewEl.innerText = secondsLeft;
-                        if (secondsLeft <= 3) {
-                            previewEl.className = "preview-panic";
-                        } else {
-                            previewEl.className = "";
-                        }
+                        if (isSoundEnabled && secondsLeft <= soundThreshold && secondsLeft !== lastPlayedSecond) { playSelectedSound(selectedSound); lastPlayedSecond = secondsLeft; }
+                        if (secondsLeft <= 3) { previewEl.className = "preview-panic"; } else { previewEl.className = ""; }
                     }
                 }
             }, 50);
@@ -506,38 +396,32 @@
 
         function showTextPreview(msg) {
             const previewEl = document.getElementById('preview-display');
-            if(previewInterval) clearInterval(previewInterval);
-            if(previewTimeout) clearTimeout(previewTimeout);
-            previewEl.innerText = msg;
-            previewEl.className = "preview-text-msg";
-            previewEl.classList.remove('hidden');
-            previewTimeout = setTimeout(() => {
-                previewEl.classList.add('hidden');
-            }, 5000);
+            if(previewInterval) clearInterval(previewInterval); if(previewTimeout) clearTimeout(previewTimeout);
+            previewEl.innerText = msg; previewEl.className = "preview-text-msg"; previewEl.classList.remove('hidden');
+            previewTimeout = setTimeout(() => { previewEl.classList.add('hidden'); }, 5000);
         }
 
         function resetPreview() {
-            if(previewInterval) clearInterval(previewInterval);
-            if(previewTimeout) clearTimeout(previewTimeout);
+            if(previewInterval) clearInterval(previewInterval); if(previewTimeout) clearTimeout(previewTimeout);
             const previewEl = document.getElementById('preview-display');
-            previewEl.classList.remove('hidden');
-            previewEl.className = "";
-            previewEl.style.color = "white";
+            previewEl.classList.remove('hidden'); previewEl.className = ""; previewEl.style.color = "white";
         }
 
         function handleStart() {
-            if (!currentRoomId || isTextMode) return;
+            if (!currentRoomId) generateNewRoom(); 
+            if (isTextMode) return;
             const duration = parseInt(document.getElementById('sec').value);
             const now = new Date().getTime();
             const targetTime = now + (duration * 1000) + 2500; 
             const gameName = document.getElementById('gameTitle').innerText;
+            const soundThreshold = parseInt(document.getElementById('soundThreshold').value) || 10;
+            const selectedSound = document.getElementById('soundSelect').value;
+            const soundOn = isSoundEnabled;
+
             startPreviewSimulation(duration, gameName);
             firebase.database().ref(currentRoomId).set({
-                mode: 'running',
-                target: targetTime,
-                duration: duration,
-                game: gameName,
-                timestamp: now
+                mode: 'running', target: targetTime, duration: duration, game: gameName, timestamp: now,
+                soundConfig: { enabled: soundOn, threshold: soundThreshold, type: selectedSound }
             });
         }
 
@@ -547,33 +431,26 @@
             if(!isTextMode) updatePreviewStatic();
             else {
                 const el = document.getElementById('preview-display');
-                el.innerText = "พิมพ์ข้อความ...";
-                el.style.fontSize = "30px";
-                el.style.color = "#aaa";
+                el.innerText = "พิมพ์ข้อความ..."; el.style.fontSize = "30px"; el.style.color = "#aaa";
             }
             firebase.database().ref(currentRoomId).set({ mode: 'stop', target: 0 });
         }
 
         function handleSendText() {
-            if (!currentRoomId || !isTextMode) return;
+            if (!currentRoomId) generateNewRoom(); 
+            if (!isTextMode) return;
             const msg = document.getElementById('textMsg').value;
             if (!msg.trim()) return alert("กรุณาพิมพ์ข้อความ");
             const now = new Date().getTime();
             showTextPreview(msg);
             firebase.database().ref(currentRoomId).set({
-                mode: 'text',
-                message: msg,
-                timestamp: now,
-                duration: 5
+                mode: 'text', message: msg, timestamp: now, duration: 5
             });
             document.getElementById('textMsg').value = "";
         }
 
         document.addEventListener("keydown", (e) => {
-            if (isTextMode && e.key === "Enter") {
-                e.preventDefault();
-                handleSendText();
-            }
+            if (isTextMode && e.key === "Enter") { e.preventDefault(); handleSendText(); }
             if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") return;
             if (!isTextMode) {
                 if (e.key === " ") { e.preventDefault(); handleStart(); }
