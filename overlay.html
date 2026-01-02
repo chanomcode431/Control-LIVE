@@ -33,8 +33,7 @@
             font-family: 'Black Ops One', 'Kanit', sans-serif;
             line-height: 1.1;
             opacity: 1; 
-            /* transition จะถูกคุมด้วย JS เพื่อให้เด้งทันทีตอนมาใหม่ๆ */
-            transition: opacity 1s ease-out; 
+            transition: opacity 1s ease-out; /* ตั้งเวลาให้ค่อยๆ หายไปใน 1 วินาที */
             max-width: 90vw;
             word-wrap: break-word;
         }
@@ -55,7 +54,7 @@
             animation: panic-pulse 0.5s infinite;
         }
 
-        /* คลาสสำหรับเลข 0 */
+        /* คลาสสำหรับเลข 0 (ค้างไว้เฉยๆ สีแดง) */
         .time-up-static {
             color: #ff0000 !important;
             transform: scale(1.5);
@@ -108,4 +107,133 @@
             projectId: "control-tiktok",
             storageBucket: "control-tiktok.firebasestorage.app",
             messagingSenderId: "771700169818",
-            appId: "1
+            appId: "1:771700169818:web:abe98c40c5b1baabab0c63",
+            measurementId: "G-DZ76HRE0RM"
+        };
+
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+
+        const params = new URLSearchParams(window.location.search);
+        const roomId = params.get('id');
+
+        const timerEl = document.getElementById('timer');
+        let timerInterval = null;
+        let fadeTimeout = null;
+
+        if (!roomId) {
+            timerEl.innerText = "NO ID";
+            timerEl.style.fontSize = "50px";
+        } else {
+            const dbRef = firebase.database().ref(roomId);
+
+            dbRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    // ถ้ามีการอัปเดตใดๆ ให้ยกเลิกการหายตัวที่รออยู่ทันที
+                    clearFade();
+
+                    if (data.mode === 'stop') {
+                        stopTimer();
+                        timerEl.innerText = "RESET"; // เปลี่ยนคำเป็น RESET
+                        timerEl.className = "stopped"; 
+                        timerEl.style.fontSize = "80px";
+                        timerEl.classList.remove("hidden"); 
+
+                        // --- [ส่วนที่เพิ่ม] ตั้งเวลา 2 วิแล้วหายไป ---
+                        fadeTimeout = setTimeout(() => {
+                            timerEl.classList.add("hidden");
+                        }, 2000); 
+
+                    } else if (data.mode === 'text') {
+                        // --- ส่วนแสดงข้อความ ---
+                        showTextMessage(data.message);
+
+                    } else if (data.mode === 'running') {
+                        timerEl.classList.remove("hidden");
+                        startSyncTimer(data.target, data.timestamp, data.game);
+                    }
+                }
+            });
+        }
+
+        // --- ฟังก์ชันแสดงข้อความ (Talk) ---
+        function showTextMessage(msg) {
+            timerEl.className = ""; // ล้างคลาสเก่า
+            timerEl.innerText = msg;
+            
+            // Trigger Animation ใหม่
+            void timerEl.offsetWidth; 
+            timerEl.classList.add("text-message");
+            timerEl.classList.remove("hidden");
+
+            // --- ตั้งเวลาข้อความหาย (5 วินาที) ---
+            fadeTimeout = setTimeout(() => {
+                timerEl.classList.remove("text-message");
+                timerEl.classList.add("hidden");
+            }, 900); 
+        }
+
+        // --- ฟังก์ชันจับเวลา ---
+        function startSyncTimer(targetTime, startTime, gameTitle) {
+            if (timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                const now = new Date().getTime();
+                
+                // 1. Logic Intro
+                const timeSinceStart = now - startTime;
+                
+                if (timeSinceStart < 2500) {
+                    timerEl.className = "intro-text";
+                    if (gameTitle && gameTitle.includes('Roblox')) {
+                        timerEl.innerText = "เริ่มนับถอยหลัง";
+                    } else if (gameTitle && gameTitle.includes('OnlyUp')) {
+                        timerEl.innerText = "FLY MODE";
+                    } else {
+                        timerEl.innerText = "ARE YOU READY?";
+                    }
+                } else {
+                    // 2. Logic Countdown
+                    const diff = targetTime - now;
+
+                    if (diff <= 0) {
+                        // --- จบเวลา ---
+                        timerEl.innerText = "0"; 
+                        timerEl.className = "time-up-static"; // สีแดงนิ่งๆ
+                        stopTimer();
+
+                        // --- สั่งรอ 2 วินาที แล้วค่อยหายไป ---
+                        fadeTimeout = setTimeout(() => {
+                            timerEl.classList.add("hidden"); 
+                        }, 2000); 
+                        
+                    } else {
+                        const secondsLeft = Math.ceil(diff / 1000);
+                        timerEl.innerText = secondsLeft;
+
+                        if (secondsLeft <= 3) {
+                            timerEl.className = "panic-mode";
+                        } else {
+                            timerEl.className = "normal-count";
+                        }
+                    }
+                }
+            }, 50);
+        }
+
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        // ฟังก์ชันยกเลิกการรอหายตัว (ป้องกันบั๊กเวลากดปุ่มรัวๆ)
+        function clearFade() {
+            if (fadeTimeout) {
+                clearTimeout(fadeTimeout);
+                fadeTimeout = null;
+            }
+            timerEl.classList.remove("hidden"); // เอาการซ่อนออกเพื่อให้พร้อมแสดงผลใหม่
+        }
+    </script>
+</body>
+</html>
