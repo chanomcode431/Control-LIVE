@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Game By STiMEXs</title>
+    <title>Control Game By STiMEXs (Multi-Room)</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
+        /* --- CSS เดิม (คงไว้ทั้งหมด) --- */
         * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, sans-serif; 
@@ -16,8 +17,6 @@
             display: flex;
             flex-direction: column;
         }
-
-        /* --- Navbar --- */
         .navbar {
             height: 60px; background: #1a1a1a; color: white; display: flex;
             align-items: center; justify-content: space-between; padding: 0 20px;
@@ -25,15 +24,8 @@
         }
         .nav-brand { font-size: 20px; font-weight: bold; color: #00e676; display: flex; align-items: center; gap: 10px; }
         .nav-credit { font-size: 14px; color: #aaa; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; }
-
-        /* --- Wrapper --- */
         .content-wrapper { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; }
-
-        /* --- Sidebar --- */
-        .sidebar {
-            width: 250px; background: #ffffff; border-right: 1px solid #ddd;
-            padding: 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
-        }
+        .sidebar { width: 250px; background: #ffffff; border-right: 1px solid #ddd; padding: 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
         .sidebar h2 { font-size: 16px; color: #555; margin-bottom: 10px; text-transform: uppercase; }
         .game-btn {
             padding: 15px; border: 2px solid #eee; border-radius: 10px; background: #f9f9f9;
@@ -42,21 +34,15 @@
         }
         .game-btn:hover { background: #eef; border-color: #ccf; }
         .game-btn.active { background: #e6f7ff; border-color: #007bff; color: #007bff; }
-
-        /* --- Main Content --- */
-        .main-panel {
-            flex: 1; display: flex; justify-content: center; align-items: center;
-            padding: 20px; background: #f0f2f5;
-        }
+        .main-panel { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; background: #f0f2f5; }
+        
         .container { 
-            background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 450px; 
+            background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 500px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;
         }
-        
         h1 { margin-top: 0; color: #333; font-size: 24px; }
         .current-game { color: #007bff; font-weight: bold; }
-
-        .input-box { margin: 30px 0; }
+        .input-box { margin: 20px 0; }
         input[type="number"] { 
             font-size: 50px; width: 140px; text-align: center; 
             padding: 10px; border-radius: 15px; border: 2px solid #ddd; 
@@ -64,8 +50,7 @@
         }
         input[type="number"]:focus { border-color: #007bff; }
         label { display: block; margin-top: 10px; color: #888; font-size: 14px; }
-
-        .btn-group { display: flex; gap: 15px; margin-top: 30px; }
+        .btn-group { display: flex; gap: 15px; margin-top: 20px; }
         button { 
             flex: 1; padding: 15px; font-size: 18px; border-radius: 12px; 
             border: none; cursor: pointer; color: white; 
@@ -75,21 +60,23 @@
         button:active { transform: scale(0.95); }
         .btn-start { background: linear-gradient(135deg, #28a745, #218838); }
         .btn-reset { background: linear-gradient(135deg, #dc3545, #c82333); }
+        #status { margin-top: 20px; color: #888; font-size: 14px; min-height: 20px; }
+        .room-control { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: left; }
+        .room-title { font-size: 14px; color: #555; margin-bottom: 8px; font-weight: bold; }
+        .link-display { display: flex; gap: 5px; }
+        .link-input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 12px; background: #f9f9f9; color: #555; }
+        .btn-copy-small { padding: 8px 15px; font-size: 12px; background: #007bff; flex: 0 0 auto; }
+        .btn-new-room { margin-top: 10px; width: 100%; padding: 8px; font-size: 14px; background: #6c757d; color: white; border-radius: 5px; }
+        .btn-new-room:hover { background: #5a6268; }
 
-        #status { margin-top: 25px; color: #888; font-size: 14px; min-height: 20px; }
-
-        /* 🔥 ส่วน Link ด้านล่าง 🔥 */
-        .link-section { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
-        .link-input { 
-            width: 100%; padding: 10px; font-size: 12px; color: #555; 
-            border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9; 
-            text-align: center; margin-bottom: 10px;
+        /* --- [ส่วนที่เพิ่มใหม่] CSS สำหรับตัวเลข Timer --- */
+        #timer {
+            font-size: 80px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+            font-family: monospace; /* ให้ตัวเลขกว้างเท่ากัน */
         }
-        .btn-copy { 
-            background: #6c757d; font-size: 14px; padding: 10px; width: 100%; 
-            border-radius: 8px; color: white; border: none; cursor: pointer; 
-        }
-        .btn-copy:hover { background: #5a6268; }
 
         @media (max-width: 700px) {
             .content-wrapper { flex-direction: column; }
@@ -118,29 +105,35 @@
             <div class="container">
                 <h1>ตั้งเวลา: <span id="gameTitle" class="current-game">Roblox</span></h1>
                 
+                <div id="timer">01:00</div>
+
                 <div class="input-box">
-                    <input type="number" id="sec" value="60" min="1">
+                    <input type="number" id="sec" value="60" min="1" onchange="updateDurationFromInput()">
                     <label>วินาทีที่ต้องการนับ</label>
                 </div>
 
                 <div class="btn-group">
-                    <button class="btn-reset" onclick="sendReset()">⏹️ Reset</button>
-                    <button class="btn-start" onclick="sendStart()">▶️ Start</button>
+                    <button class="btn-reset" onclick="handleReset()">⏹️ Reset (R)</button>
+                    <button class="btn-start" onclick="handleStart()">▶️ Start (Space)</button>
                 </div>
 
                 <div id="status">สถานะ: พร้อมเชื่อมต่อ...</div>
                 
-                <div class="link-section">
-                    <label style="margin-bottom: 5px; display: block;">👇 ลิงก์สำหรับใส่ใน OBS / TikTok Live</label>
-                    <input type="text" id="overlayLink" class="link-input" readonly>
-                    <button class="btn-copy" onclick="copyLink()">📋 คัดลอกลิงก์</button>
+                <div class="room-control">
+                    <div class="room-title">🔗 ลิ้งค์ Overlay (สำหรับห้องนี้):</div>
+                    <div class="link-display">
+                        <input type="text" id="overlayLink" class="link-input" readonly>
+                        <button class="btn-copy-small" onclick="copyLink()">Copy</button>
+                    </div>
+                    <button class="btn-new-room" onclick="generateNewRoom()">🔄 ขอห้องใหม่ / เปลี่ยนลิ้งค์</button>
+                    <div style="font-size: 10px; color: #aaa; margin-top: 5px; text-align: center;">ID: <span id="roomIdDisplay">...</span></div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 🔑 กุญแจ Firebase ของคุณ ---
+        // --- 1. Firebase Logic (ของเดิม) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDgn9Vll-qcLhw7dcNtA9oGKy_BCRuefIs",
             authDomain: "control-tiktok.firebaseapp.com",
@@ -152,59 +145,195 @@
             measurementId: "G-DZ76HRE0RM"
         };
 
+        let currentRoomId = "";
+        let db;
+
         try {
             if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-            const db = firebase.database();
+            db = firebase.database();
+            initRoom();
             document.getElementById('status').innerText = "สถานะ: เชื่อมต่อ Server แล้ว ✅";
-            
-            // แสดงลิงก์ในช่องอัตโนมัติ
-            const fixedLink = window.location.origin + "/overlay.html";
-            document.getElementById('overlayLink').value = fixedLink;
-            
         } catch (e) {
             document.getElementById('status').innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อ ❌";
         }
 
+        // --- 2. Room Management (ของเดิม) ---
+        function initRoom() {
+            let savedRoom = localStorage.getItem('my_room_id');
+            if (savedRoom) { currentRoomId = savedRoom; } 
+            else { generateNewRoom(); return; }
+            updateRoomUI();
+        }
+
+        function generateNewRoom() {
+            const timestamp = new Date().getTime();
+            const randomStr = Math.random().toString(36).substring(2, 6);
+            currentRoomId = `room_${timestamp}_${randomStr}`;
+            localStorage.setItem('my_room_id', currentRoomId);
+            updateRoomUI();
+        }
+
+        function updateRoomUI() {
+            const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '').replace('control.html', ''); 
+            const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+            const fullLink = `${cleanBase}overlay.html?id=${currentRoomId}`;
+            document.getElementById('overlayLink').value = fullLink;
+            document.getElementById('roomIdDisplay').innerText = currentRoomId;
+        }
+
+        function copyLink() {
+            const copyText = document.getElementById("overlayLink");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            const btn = document.querySelector('.btn-copy-small');
+            btn.innerText = "Copied!";
+            setTimeout(() => btn.innerText = "Copy", 2000);
+        }
+
+        // --- 3. Game Selection (ของเดิม + อัปเดต Timer) ---
         function selectGame(gameName, defaultTime, btnElement) {
             document.getElementById('gameTitle').innerText = gameName;
             document.getElementById('sec').value = defaultTime;
             document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
+            
+            // อัปเดตเวลา local ทันทีเมื่อเปลี่ยนเกม
+            updateDurationFromInput();
+            resetLocalTimer();
         }
 
-        function sendStart() {
-            const sec = parseInt(document.getElementById('sec').value) || 0;
-            if (sec <= 0) return alert("กรุณาใส่วินาทีให้ถูกต้อง");
+        // =========================================================
+        // --- [ส่วนที่เพิ่มใหม่] Logic Timer ตามที่คุณขอ ---
+        // =========================================================
 
+        let duration = 60; // ค่าเริ่มต้น
+        let remaining = duration;
+        let interval = null;
+        const timerEl = document.getElementById("timer");
+
+        // ฟังก์ชันอ่านค่าจาก Input มาใส่ตัวแปร duration
+        function updateDurationFromInput() {
+            const val = parseInt(document.getElementById('sec').value);
+            if(val > 0) {
+                duration = val;
+                // ถ้า Timer ไม่ได้เดินอยู่ ให้ปรับตัวเลขโชว์เลย
+                if (!interval) {
+                    remaining = duration;
+                    timerEl.textContent = formatTime(remaining);
+                }
+            }
+        }
+
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+        }
+
+        function startLocalTimer() {
+            if (interval) return;
+            
+            // อัปเดต duration ล่าสุดจาก input ก่อนเริ่ม
+            updateDurationFromInput();
+            
+            // ถ้าเป็น 0 หรือค่ารีเซ็ตอยู่ ให้เริ่มจาก duration
+            if (remaining <= 0) remaining = duration;
+
+            interval = setInterval(() => {
+                remaining--;
+                timerEl.textContent = formatTime(remaining);
+
+                if (remaining <= 0) {
+                    stopLocalTimer();
+                }
+            }, 1000);
+        }
+
+        function stopLocalTimer() {
+            clearInterval(interval);
+            interval = null;
+        }
+
+        function resetLocalTimer() {
+            stopLocalTimer();
+            updateDurationFromInput(); // ดึงค่าล่าสุด
+            remaining = duration;
+            timerEl.textContent = formatTime(remaining);
+        }
+
+        // =========================================================
+        // --- [ส่วนเชื่อมต่อ] ผสาน Local Timer เข้ากับ Firebase Sender ---
+        // =========================================================
+
+        // ฟังก์ชันหลัก: กดปุ่ม Start หรือกด Spacebar -> ทำทั้ง 2 อย่าง
+        function handleStart() {
+            if (!currentRoomId) return alert("รหัสห้องไม่ถูกต้อง");
+            
+            // 1. เริ่ม Timer บนหน้าจอนี้ (Local)
+            startLocalTimer();
+
+            // 2. ส่งคำสั่งไป Firebase (Remote)
             const now = new Date().getTime();
-            const introTime = 3000; 
-            const targetTime = now + (sec * 1000) + introTime; 
+            const introTime = 3000; // ดีเลย์ 3 วิ (ถ้ามี video intro)
+            // ถ้าไม่มี intro ให้เอา introTime ออก
+            
+            const targetTime = now + (remaining * 1000); // ส่งเวลาที่เหลือปัจจุบันไป
             const gameName = document.getElementById('gameTitle').innerText;
 
-            firebase.database().ref('timer').set({
+            firebase.database().ref(currentRoomId).set({
                 mode: 'running',
                 target: targetTime,
-                duration: sec,
-                game: gameName 
+                duration: remaining, // ส่งเวลาที่เหลือไป
+                game: gameName,
+                timestamp: now
             });
-            document.getElementById('status').innerText = `กำลังนับถอยหลัง (${gameName})... ⏳`;
+            
+            document.getElementById('status').innerText = "สถานะ: กำลังจับเวลา... ⏳";
         }
 
-        function sendReset() {
-            firebase.database().ref('timer').set({
+        // ฟังก์ชันหลัก: กดปุ่ม Reset หรือกด R
+        function handleReset() {
+            if (!currentRoomId) return;
+
+            // 1. รีเซ็ตหน้าจอนี้
+            resetLocalTimer();
+
+            // 2. ส่งคำสั่ง Reset ไป Firebase
+            firebase.database().ref(currentRoomId).set({
                 mode: 'stop',
                 target: 0
             });
-            document.getElementById('status').innerText = "สถานะ: รีเซ็ตเป็น 0 แล้ว ⏹️";
+            document.getElementById('status').innerText = "สถานะ: รีเซ็ตแล้ว ⏹️";
+        }
+        
+        // ฟังก์ชันหลัก: กดปุ่ม Stop (ไม่มีปุ่มแต่มีคีย์ลัด S)
+        function handleStop() {
+            stopLocalTimer();
+             // ส่งไปบอก Firebase ให้หยุด (อาจจะต้องเพิ่ม Logic pause ใน Overlay ถ้าต้องการ)
+             // ในที่นี้ส่ง Reset ไปก่อน หรือปล่อยว่างไว้ถ้าแค่หยุดดูเอง
+             document.getElementById('status').innerText = "สถานะ: หยุดชั่วคราว ⏸️";
         }
 
-        // ฟังก์ชันคัดลอกลิงก์
-        function copyLink() {
-            const copyText = document.getElementById("overlayLink");
-            copyText.select();
-            document.execCommand("copy");
-            alert("คัดลอกลิงก์เรียบร้อย! นำไปวางใน OBS ได้เลยครับ");
-        }
+        // --- คีย์ลัด (ตามที่คุณขอ) ---
+        document.addEventListener("keydown", (e) => {
+            // เช็คว่าไม่ได้พิมพ์อยู่ในช่อง Input (กันพลาดเวลากรอกตัวเลข)
+            if (document.activeElement.tagName === "INPUT") return;
+
+            if (e.key === " ") {
+                e.preventDefault(); // กันหน้าเว็บเลื่อนลง
+                handleStart();      // Space = เริ่ม (ทั้ง Local และ Firebase)
+            }
+            if (e.key === "r" || e.key === "R") {
+                handleReset();      // R = รีเซ็ต
+            }
+            if (e.key === "s" || e.key === "S") {
+                handleStop();       // S = หยุด (Local)
+            }
+        });
+
+        // เริ่มต้น: โชว์เวลาครั้งแรก
+        updateDurationFromInput();
     </script>
 </body>
 </html>
