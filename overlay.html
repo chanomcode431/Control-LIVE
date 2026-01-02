@@ -4,60 +4,149 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Countdown Overlay</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        body {
-            margin: 0; padding: 0;
-            background-color: transparent; /* พื้นหลังใส */
-            display: flex; justify-content: center; align-items: center;
-            height: 100vh; overflow: hidden;
-            font-family: 'Courier New', Courier, monospace;
+        body { 
+            margin: 0; background: transparent; 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; overflow: hidden; 
+            font-family: 'Courier New', monospace; 
         }
-        .timer-container {
-            text-align: center;
-            color: #ffffff; 
-            text-shadow: 3px 3px 0px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; /* ขอบดำหนาๆ จะได้เห็นชัด */
-            font-size: 90px; 
-            font-weight: 900;
-            /* เอาพื้นหลังเทาๆ ออกเพื่อให้เนียนไปกับไลฟ์ หรือใส่กลับมาก็ได้ถ้าต้องการ */
-            /* background: rgba(0, 0, 0, 0.5); padding: 20px; border-radius: 15px; */
+        .timer { 
+            color: white; 
+            font-size: 120px; 
+            font-weight: 900; 
+            text-shadow: 4px 4px 0 #000, -2px -2px 0 #000;
+            transition: opacity 0.5s; 
+            opacity: 1;
+        }
+
+        /* โหมดสีแดง (3 วินาทีสุดท้าย) */
+        .panic-mode {
+            font-size: 220px; /* ใหญ่สะใจ */
+            color: #ff0000;   /* แดงสด */
+            text-shadow: 8px 8px 0 #800000, -3px -3px 0 #800000;
+            animation: pulse-fast 0.5s infinite;
+        }
+
+        /* โหมดเตรียมบิน */
+        .intro-mode {
+            font-size: 80px;
+            color: #00e676; /* เขียว */
+            text-shadow: 3px 3px 0 #000;
+            animation: pulse-slow 1s infinite;
+        }
+
+        @keyframes pulse-slow {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes pulse-fast {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
-    <div class="timer-container" id="timer">Loading...</div>
+    <div class="timer" id="timer">0</div>
 
     <script>
-        // ดึงค่าเวลา t จาก URL (ที่ส่งมาจากหน้าแผงควบคุม)
-        const urlParams = new URLSearchParams(window.location.search);
-        const targetTimestamp = urlParams.get('t');
+        // --- 🔑 กุญแจ Firebase ของคุณ ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDgn9Vll-qcLhw7dcNtA9oGKy_BCRuefIs",
+            authDomain: "control-tiktok.firebaseapp.com",
+            databaseURL: "https://control-tiktok-default-rtdb.firebaseio.com",
+            projectId: "control-tiktok",
+            storageBucket: "control-tiktok.firebasestorage.app",
+            messagingSenderId: "771700169818",
+            appId: "1:771700169818:web:abe98c40c5b1baabab0c63",
+            measurementId: "G-DZ76HRE0RM"
+        };
 
-        function updateTimer() {
-            if (!targetTimestamp) {
-                document.getElementById("timer").innerHTML = "ยังไม่ตั้งเวลา";
-                document.getElementById("timer").style.fontSize = "40px";
-                return;
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const db = firebase.database();
+        
+        let targetTimestamp = 0;
+        let originalDuration = 0;
+        let isRunning = false;
+        let timerInterval = null;
+
+        db.ref('timer').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                if (data.mode === 'stop') {
+                    isRunning = false;
+                    const el = document.getElementById("timer");
+                    el.innerHTML = "0";
+                    el.style.opacity = "1";
+                    el.className = "timer";
+                } else if (data.mode === 'running') {
+                    targetTimestamp = data.target;
+                    originalDuration = data.duration * 1000;
+                    isRunning = true;
+                    document.getElementById("timer").style.opacity = "1";
+                    startCountdown();
+                }
             }
+        });
 
-            const now = new Date().getTime();
-            const distance = targetTimestamp - now;
+        function startCountdown() {
+            if (timerInterval) clearInterval(timerInterval);
 
-            if (distance < 0) {
-                document.getElementById("timer").innerHTML = "00:00:00"; // หรือคำว่า "LIVE NOW!"
-                return;
-            }
+            timerInterval = setInterval(() => {
+                if (!isRunning) return;
 
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                const now = new Date().getTime();
+                const totalDistance = targetTimestamp - now;
+                const timerElement = document.getElementById("timer");
+                
+                // ช่วง Intro (เกินมาจากเวลาที่ตั้ง)
+                const introDiff = totalDistance - originalDuration;
 
-            document.getElementById("timer").innerHTML = 
-                (hours < 10 ? "0" + hours : hours) + ":" + 
-                (minutes < 10 ? "0" + minutes : minutes) + ":" + 
-                (seconds < 10 ? "0" + seconds : seconds);
+                if (introDiff > 0) {
+                    // --- ช่วงเตรียมบิน ---
+                    timerElement.innerHTML = "FLY MODE✈️";
+                    timerElement.className = "timer intro-mode";
+                } else {
+                    // --- ช่วงนับเวลาจริง ---
+                    
+                    if (totalDistance <= 0) {
+                        timerElement.innerHTML = "0"; // โชว์ 0 ก่อนหาย
+                        setTimeout(() => { timerElement.style.opacity = "0"; }, 500);
+                        clearInterval(timerInterval);
+                        return;
+                    }
+
+                    // 🔥 สูตรใหม่: ใช้ Math.ceil (ปัดเศษขึ้น)
+                    // ตัวอย่าง: เหลือ 9.9 วินาที -> ปัดเป็น 10 (จะได้เห็นเลข 10 ก่อน)
+                    const totalSeconds = Math.ceil(totalDistance / 1000);
+
+                    // 🔥 เช็กว่าเหลือ 3 วินาทีสุดท้ายหรือไม่? (เลข 3, 2, 1)
+                    if (totalSeconds <= 3) { 
+                        timerElement.className = "timer panic-mode";
+                    } else {
+                        timerElement.className = "timer";
+                    }
+
+                    // การแสดงผล (ถ้ามากกว่า 60 วิ ให้โชว์นาทีด้วย)
+                    let displayTime = "";
+                    if (totalSeconds >= 60) {
+                        const minutes = Math.floor(totalSeconds / 60);
+                        const seconds = totalSeconds % 60;
+                        displayTime = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
+                    } else {
+                        // ถ้าไม่ถึงนาที โชว์เลขวินาทีเพียวๆ
+                        displayTime = totalSeconds;
+                    }
+                    
+                    timerElement.innerHTML = displayTime;
+                }
+            }, 50); // อัปเดตถี่ๆ
         }
-
-        setInterval(updateTimer, 1000);
-        updateTimer();
     </script>
 </body>
 </html>
