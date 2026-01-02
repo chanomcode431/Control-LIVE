@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #1a1a1a;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            width: 300px;
+        }
+        h2 { margin-top: 0; color: #333; }
+        input {
+            width: 100%; padding: 12px; margin: 20px 0;
+            border: 2px solid #ddd; border-radius: 8px;
+            font-size: 16px; box-sizing: border-box;
+            text-align: center;
+        }
+        button {
+            width: 100%; padding: 12px;
+            background: #007bff; color: white;
+            border: none; border-radius: 8px;
+            font-size: 16px; cursor: pointer; font-weight: bold;
+        }
+        button:hover { background: #0056b3; }
+        .error { color: red; font-size: 14px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+        <h2>🔒 Restricted Access</h2>
+        <p style="color: #666; font-size: 14px;">กรุณาใส่รหัสผ่านเพื่อใช้งาน</p>
+        
+        <input type="password" id="password" placeholder="Password" onkeyup="if(event.key === 'Enter') checkLogin()">
+        <button onclick="checkLogin()">Login</button>
+        <div id="error-msg" class="error">รหัสผ่านไม่ถูกต้อง!</div>
+    </div>
+
+    <script>
+        // 🔥🔥🔥 ตั้งรหัสผ่านของคุณตรงนี้ 🔥🔥🔥
+        const MY_PASSWORD = "1324"; 
+
+        // ตรวจสอบว่าเคย Login แล้วหรือยัง (ถ้าเคยแล้วให้เด้งไปหน้าหลักเลย)
+        if (sessionStorage.getItem("isLoggedIn") === "true") {
+            window.location.href = "index.html";
+        }
+
+        function checkLogin() {
+            const input = document.getElementById("password").value;
+            const errorMsg = document.getElementById("error-msg");
+
+            if (input === MY_PASSWORD) {
+                // รหัสถูก -> บันทึกสถานะ และไปหน้าหลัก
+                sessionStorage.setItem("isLoggedIn", "true");
+                window.location.href = "index.html";
+            } else {
+                // รหัสผิด
+                errorMsg.style.display = "block";
+                document.getElementById("password").value = "";
+            }
+        }
+    </script>
+</body>
+</html>
