@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Stream Overlay Pro</title>
+    <title>Game Overlay Pro</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
@@ -34,7 +34,7 @@
             line-height: 1.1;
             opacity: 1; 
             transition: opacity 0.5s ease-out;
-            max-width: 90vw;
+            max-width: 95vw;
             word-wrap: break-word;
         }
 
@@ -72,7 +72,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .hidden { opacity: 0 !important; }
+        .hidden { opacity: 0 !important; visibility: hidden; }
     </style>
 </head>
 <body>
@@ -105,13 +105,15 @@
         // --- ระบบเสียง (Web Audio API) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playBeep(freq, dur, vol) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
-            osc.start(); osc.stop(audioCtx.currentTime + dur);
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(vol || 0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+                osc.start(); osc.stop(audioCtx.currentTime + dur);
+            } catch(e) { console.error("Audio Error", e); }
         }
 
         if (roomId) {
@@ -119,7 +121,7 @@
                 const data = snapshot.val();
                 if (!data) return;
 
-                clearFade(); // ยกเลิกการรอหายตัวถ้ามีข้อมูลใหม่มา
+                clearFade(); 
 
                 if (data.mode === 'stop') {
                     stopTimer();
@@ -151,32 +153,32 @@
                 const timeSinceStart = now - data.timestamp;
 
                 if (timeSinceStart < 2500) {
-                    // ช่วงเตรียมตัว (Intro)
-                    const intro = data.introText || (data.game.includes('Roblox') ? "เริ่มนับถอยหลัง" : (data.game.includes('OnlyUp') ? "FLY MODE" : "READY?"));
+                    const game = data.game || "";
+                    const intro = data.introText || (game.includes('Roblox') ? "เริ่มนับถอยหลัง" : (game.includes('OnlyUp') ? "FLY MODE" : "READY?"));
                     timerEl.innerText = intro;
                     timerEl.className = "intro-text";
                 } 
                 else if (diff <= 0) {
-                    // จบเวลา (Outro)
                     const outro = data.outroText || "0";
                     timerEl.innerText = outro;
                     timerEl.className = "time-up-static";
                     
-                    if (lastPlayedSec !== 0 && data.soundEnabled) {
-                        playBeep(880, 1.2, 0.5); // เสียงบี๊ดยาวตอนจบ
+                    // ป้องกัน Error หากไม่มีค่า soundEnabled ใน DB
+                    if (lastPlayedSec !== 0 && data.soundEnabled !== false) {
+                        playBeep(880, 1.2, 0.5);
                         lastPlayedSec = 0;
                     }
                     stopTimer();
                     fadeTimeout = setTimeout(() => { timerEl.classList.add("hidden"); }, 2000);
                 } 
                 else {
-                    // กำลังนับถอยหลัง
                     timerEl.innerText = secLeft;
                     timerEl.className = secLeft <= 3 ? "panic-mode" : "normal-count";
 
-                    // เล่นเสียงติ๊กตามวินาทีที่แอดมินตั้งค่ามา
-                    if (data.soundEnabled && secLeft <= data.soundStartAt && secLeft !== lastPlayedSec) {
-                        playBeep(440, 0.15, 0.3); // เสียงติ๊ก
+                    // ระบบเสียง (Check ค่าป้องกันสคริปต์หยุดทำงาน)
+                    const soundStart = data.soundStartAt || 10;
+                    if (data.soundEnabled !== false && secLeft <= soundStart && secLeft !== lastPlayedSec) {
+                        playBeep(440, 0.15, 0.3); 
                         lastPlayedSec = secLeft;
                     }
                 }
