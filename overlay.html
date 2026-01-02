@@ -33,35 +33,42 @@
             font-family: 'Black Ops One', 'Kanit', sans-serif;
             line-height: 1.1;
             opacity: 1; 
-            transition: opacity 1s ease-out;
-            max-width: 90vw; /* กันข้อความยาวเกินจอ */
+            transition: opacity 1s ease-out; /* ตั้งเวลาให้ค่อยๆ หายไปใน 1 วินาที */
+            max-width: 90vw;
             word-wrap: break-word;
         }
 
         /* --- Styles for Timer Mode --- */
         .stopped { color: #ff4444; font-size: 80px !important; }
         .normal-count { color: #ffffff; }
-        
-        .panic-mode {
-            color: #ff0000 !important;
-            animation: panic-pulse 0.5s infinite;
-        }
+
+        /* เอฟเฟกต์ 3 วินาทีสุดท้าย */
         @keyframes panic-pulse {
             0% { transform: scale(1); text-shadow: 0 0 10px red; }
             50% { transform: scale(1.3); text-shadow: 0 0 30px red, 0 0 50px yellow; }
             100% { transform: scale(1); text-shadow: 0 0 10px red; }
         }
 
+        .panic-mode {
+            color: #ff0000 !important;
+            animation: panic-pulse 0.5s infinite;
+        }
+
+        /* คลาสสำหรับเลข 0 (ค้างไว้เฉยๆ สีแดง) */
         .time-up-static {
-            color: #ff0000 !important; transform: scale(1.5); animation: none !important;
+            color: #ff0000 !important;
+            transform: scale(1.5);
+            animation: none !important;
         }
 
         /* --- Styles for Text Mode (Talk) --- */
         .text-message {
             font-family: 'Kanit', sans-serif !important;
-            font-size: 80px !important; /* ขนาดข้อความ */
-            color: #00e676 !important;  /* สีข้อความ (เขียว) */
+            font-size: 80px !important; 
+            color: #00e676 !important;  
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 1 !important;
+            transform: scale(1);
         }
 
         @keyframes popIn {
@@ -71,12 +78,15 @@
 
         /* --- Utilities --- */
         .hidden { opacity: 0 !important; }
-        
+
         /* Intro Text */
         .intro-text {
-            font-size: 80px !important; color: #ffd700;
-            animation: fadeIn 0.5s ease-in-out; white-space: nowrap;
+            font-size: 80px !important;
+            color: #ffd700;
+            animation: fadeIn 0.5s ease-in-out;
+            white-space: nowrap;
         }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -119,72 +129,88 @@
             dbRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    clearAllTimers(); // เคลียร์ทุกอย่างก่อนเริ่มใหม่
+                    // ถ้ามีการอัปเดตใดๆ ให้ยกเลิกการหายตัวที่รออยู่ทันที
+                    clearFade();
 
-                    // --- กรณี 1: สั่งหยุด ---
                     if (data.mode === 'stop') {
-                        timerEl.innerText = ""; // เคลียร์หน้าจอว่าง
-                        timerEl.classList.remove("hidden");
-                        
-                    // --- กรณี 2: โหมดข้อความ (Talk) ---
-                    } else if (data.mode === 'text') {
-                        showTextMessage(data.message, data.timestamp);
+                        stopTimer();
+                        timerEl.innerText = "STOP"; 
+                        timerEl.className = "stopped"; 
+                        timerEl.style.fontSize = "80px";
+                        timerEl.classList.remove("hidden"); 
 
-                    // --- กรณี 3: โหมดจับเวลาปกติ ---
+                    } else if (data.mode === 'text') {
+                        // --- [เพิ่ม] ส่วนแสดงข้อความ ---
+                        showTextMessage(data.message);
+
                     } else if (data.mode === 'running') {
                         timerEl.classList.remove("hidden");
-                        timerEl.classList.remove("text-message"); // ลบคลาสข้อความออก
                         startSyncTimer(data.target, data.timestamp, data.game);
                     }
                 }
             });
         }
 
-        // --- Logic: แสดงข้อความ (Talk) ---
-        function showTextMessage(msg, timestamp) {
-            const now = new Date().getTime();
-            // ถ้าข้อความเก่าเกิน 5 วิแล้ว (เช่นคนเพิ่งเปิดจอมา) ไม่ต้องโชว์
-            if (now - timestamp > 5500) {
-                timerEl.innerText = "";
-                return;
-            }
-
+        // --- ฟังก์ชันแสดงข้อความ (Talk) ---
+        function showTextMessage(msg) {
+            timerEl.className = ""; // ล้างคลาสเก่า
             timerEl.innerText = msg;
-            timerEl.className = "text-message"; // ใส่สไตล์ข้อความ
+            
+            // Trigger Animation ใหม่
+            void timerEl.offsetWidth; 
+            timerEl.classList.add("text-message");
             timerEl.classList.remove("hidden");
 
-            // คำนวณเวลาที่เหลือให้ครบ 5 วิ
-            const timeLeft = 5000 - (now - timestamp);
-            
-            // ตั้งเวลาให้หายไป
+            // --- [จุดแก้เวลาข้อความหาย] ---
             fadeTimeout = setTimeout(() => {
+                timerEl.classList.remove("text-message");
                 timerEl.classList.add("hidden");
-            }, timeLeft > 0 ? timeLeft : 0);
+            }, 5000); // 5000 = 5 วินาที
         }
 
-        // --- Logic: จับเวลา (Timer) ---
+        // --- ฟังก์ชันจับเวลา ---
         function startSyncTimer(targetTime, startTime, gameTitle) {
+            if (timerInterval) clearInterval(timerInterval);
+
             timerInterval = setInterval(() => {
                 const now = new Date().getTime();
+                
+                // 1. Logic Intro
                 const timeSinceStart = now - startTime;
                 
-                if (timeSinceStart < 2500) { // Intro Logic
+                if (timeSinceStart < 2500) {
                     timerEl.className = "intro-text";
-                    if (gameTitle && gameTitle.includes('Roblox')) timerEl.innerText = "เริ่มนับถอยหลัง";
-                    else if (gameTitle && gameTitle.includes('OnlyUp')) timerEl.innerText = "FLY MODE";
-                    else timerEl.innerText = "ARE YOU READY?";
-                } else { // Countdown Logic
+                    if (gameTitle && gameTitle.includes('Roblox')) {
+                        timerEl.innerText = "เริ่มนับถอยหลัง";
+                    } else if (gameTitle && gameTitle.includes('OnlyUp')) {
+                        timerEl.innerText = "FLY MODE";
+                    } else {
+                        timerEl.innerText = "ARE YOU READY?";
+                    }
+                } else {
+                    // 2. Logic Countdown
                     const diff = targetTime - now;
+
                     if (diff <= 0) {
+                        // --- จบเวลา ---
                         timerEl.innerText = "0"; 
-                        timerEl.className = "time-up-static";
+                        timerEl.className = "time-up-static"; // สีแดงนิ่งๆ
                         stopTimer();
-                        fadeTimeout = setTimeout(() => { timerEl.classList.add("hidden"); }, 2000);
+
+                        // --- สั่งรอ 2 วินาที แล้วค่อยหายไป ---
+                        fadeTimeout = setTimeout(() => {
+                            timerEl.classList.add("hidden"); 
+                        }, 2000); // 2 วินาทีหลังจากนับจบ
+                        
                     } else {
                         const secondsLeft = Math.ceil(diff / 1000);
                         timerEl.innerText = secondsLeft;
-                        if (secondsLeft <= 3) timerEl.className = "panic-mode";
-                        else timerEl.className = "normal-count";
+
+                        if (secondsLeft <= 3) {
+                            timerEl.className = "panic-mode";
+                        } else {
+                            timerEl.className = "normal-count";
+                        }
                     }
                 }
             }, 50);
@@ -195,11 +221,12 @@
             timerInterval = null;
         }
 
-        function clearAllTimers() {
-            stopTimer();
-            if (fadeTimeout) { clearTimeout(fadeTimeout); fadeTimeout = null; }
-            timerEl.classList.remove("hidden");
-            timerEl.className = ""; // Reset classes
+        function clearFade() {
+            if (fadeTimeout) {
+                clearTimeout(fadeTimeout);
+                fadeTimeout = null;
+            }
+            timerEl.classList.remove("hidden"); // เอาการซ่อนออกเพื่อให้พร้อมแสดงผลใหม่
         }
     </script>
 </body>
