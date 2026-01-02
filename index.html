@@ -2,95 +2,345 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Game Overlay</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Control Deck</title>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Kanit:wght@800&display=swap');
+        :root {
+            --bg-dark: #121212;
+            --bg-card: #1e1e1e;
+            --bg-sidebar: #181818;
+            --primary: #00e676;
+            --danger: #ff5252;
+            --text-main: #ffffff;
+            --text-muted: #b0bec5;
+            --accent-blue: #2979ff;
+            --accent-orange: #ff9100;
+        }
 
+        * { box-sizing: border-box; }
         body { 
-            background-color: rgba(0, 0, 0, 0); 
+            font-family: 'Kanit', sans-serif; 
             margin: 0; padding: 0; 
-            overflow: hidden; 
-            font-family: 'Kanit', sans-serif;
-            text-align: center;
+            background: var(--bg-dark); 
+            color: var(--text-main);
+            height: 100vh; 
             display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh;
-            color: white;
-            text-shadow: 3px 3px 0px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            overflow: hidden;
         }
 
-        .container {
-            display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;
+        /* --- Sidebar --- */
+        .sidebar { 
+            width: 260px; 
+            background: var(--bg-sidebar); 
+            border-right: 1px solid #333; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            z-index: 10;
         }
 
-        #timer {
-            font-size: 150px;
-            font-weight: 900;
-            font-family: 'Black Ops One', 'Kanit', sans-serif;
-            line-height: 1.1;
-            opacity: 1; 
-            transition: opacity 0.5s ease-out; /* ลดเวลา transition ลงเพื่อให้ตอบสนองไวขึ้น */
-            max-width: 90vw;
-            word-wrap: break-word;
+        .brand {
+            font-size: 20px; 
+            font-weight: 600; 
+            color: var(--primary); 
+            margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
         }
-
-        /* --- Styles for Timer Mode --- */
-        .stopped { color: #ff4444; font-size: 80px !important; opacity: 1 !important;}
-        .normal-count { color: #ffffff; opacity: 1 !important;}
         
-        .panic-mode {
-            color: #ff0000 !important;
-            animation: panic-pulse 0.5s infinite;
-            opacity: 1 !important;
+        .menu-label {
+            font-size: 12px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;
         }
+
+        .game-btn {
+            padding: 12px 15px; 
+            border-radius: 8px; 
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: 400; 
+            text-align: left; 
+            transition: all 0.2s ease;
+            display: flex; align-items: center; gap: 12px;
+            border: 1px solid transparent;
+        }
+
+        .game-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        
+        .game-btn.active { 
+            background: rgba(0, 230, 118, 0.15); 
+            color: var(--primary); 
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            font-weight: 600;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            overflow-y: auto;
+            align-items: center;
+        }
+
+        .dashboard-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+        }
+
+        /* --- Header & Status --- */
+        .header-row {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
+        }
+        .header-title h1 { margin: 0; font-size: 1.5rem; font-weight: 300; }
+        .header-title span { color: var(--primary); font-weight: 600; }
+        
+        .status-badge {
+            font-size: 12px;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: flex; align-items: center; gap: 6px;
+            color: var(--text-muted);
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; }
+        .status-dot.online { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
+
+        /* --- Preview Monitor --- */
+        #timer-container {
+            background: #000;
+            border: 4px solid #333;
+            border-radius: 12px;
+            height: 180px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 30px;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+        
+        #preview-display {
+            font-family: 'Black Ops One', 'Kanit', sans-serif;
+            font-size: 70px; 
+            font-weight: 900; 
+            color: white;
+            line-height: 1; 
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            transition: opacity 0.5s ease-out;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* Styles for Preview */
+        .preview-intro { color: #ffd700 !important; font-size: 36px !important; letter-spacing: 2px; }
+        .preview-panic { color: #ff0000 !important; animation: panic-pulse 0.5s infinite; text-shadow: 0 0 20px red !important; }
+        .preview-static-red { color: #ff0000 !important; animation: none !important; }
+        .preview-text-msg { color: var(--primary) !important; font-size: 32px !important; padding: 20px; line-height: 1.4 !important; }
+        
         @keyframes panic-pulse {
-            0% { transform: scale(1); text-shadow: 0 0 10px red; }
-            50% { transform: scale(1.3); text-shadow: 0 0 30px red, 0 0 50px yellow; }
-            100% { transform: scale(1); text-shadow: 0 0 10px red; }
-        }
-
-        .time-up-static {
-            color: #ff0000 !important; transform: scale(1.5); animation: none !important; opacity: 1 !important;
-        }
-
-        /* --- Styles for Text Mode (Talk) --- */
-        .text-message {
-            font-family: 'Kanit', sans-serif !important; /* บังคับใช้ฟอนต์ไทย */
-            font-size: 80px !important; 
-            color: #00e676 !important;  
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            opacity: 1 !important; /* บังคับให้เห็น */
-            transform: scale(1);
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0); opacity: 0; }
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* --- Utilities --- */
-        .hidden { opacity: 0 !important; pointer-events: none; }
+        /* --- Controls --- */
+        .control-group { margin-bottom: 20px; text-align: center; }
+        .control-label { display: block; margin-bottom: 10px; color: var(--text-muted); font-size: 14px; }
         
-        /* Intro Text */
-        .intro-text {
-            font-size: 80px !important; color: #ffd700;
-            animation: fadeIn 0.5s ease-in-out; white-space: nowrap;
-            opacity: 1 !important;
+        /* Input Styling */
+        input[type="number"] { 
+            background: #2a2a2a; border: 2px solid #444; color: white;
+            font-size: 36px; width: 100%; max-width: 200px; text-align: center;
+            padding: 10px; border-radius: 12px; font-weight: bold; outline: none; transition: 0.3s;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        input[type="number"]:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0, 230, 118, 0.2); }
+
+        textarea {
+            background: #2a2a2a; border: 2px solid #444; color: white;
+            width: 100%; padding: 15px; border-radius: 12px; font-size: 18px; 
+            resize: none; outline: none; transition: 0.3s;
+        }
+        textarea:focus { border-color: var(--accent-blue); }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 15px; margin-top: 20px; }
+        
+        button {
+            flex: 1; padding: 18px; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            text-transform: uppercase; letter-spacing: 1px;
+            color: white;
+        }
+        button:active { transform: scale(0.96); }
+
+        .btn-start { 
+            background: linear-gradient(135deg, #00e676, #00b359); 
+            box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);
+        }
+        .btn-reset { 
+            background: #333; color: #ff5252; border: 1px solid #ff5252;
+        }
+        .btn-reset:hover { background: #ff5252; color: white; }
+        
+        .btn-send { 
+            background: linear-gradient(135deg, #2979ff, #1565c0); 
+            box-shadow: 0 4px 15px rgba(41, 121, 255, 0.4);
+        }
+
+        /* --- Footer / Link --- */
+        .footer-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #333;
+        }
+        .link-box {
+            display: flex; background: #121212; padding: 5px; border-radius: 8px; border: 1px solid #333;
+            align-items: center; margin-bottom: 10px;
+        }
+        .link-input {
+            flex: 1; background: transparent; border: none; color: #888; 
+            padding: 8px; font-size: 12px; outline: none;
+        }
+        .btn-copy-small {
+            background: #333; color: white; font-size: 10px; padding: 6px 12px;
+            border-radius: 6px; margin: 0; flex: 0; width: auto; box-shadow: none;
+        }
+        .btn-copy-small:hover { background: #555; }
+        
+        .btn-new-room {
+            margin-top: 10px; background: transparent; color: #555; font-size: 12px; padding: 5px;
+            border: 1px dashed #444; width: 100%; text-transform: none; letter-spacing: 0;
+        }
+        .btn-new-room:hover { border-color: #777; color: #777; }
+
+        /* --- Special Box for OnlyUp --- */
+        .ahk-box {
+            background: rgba(255, 145, 0, 0.1);
+            border: 1px solid var(--accent-orange);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+        }
+        .ahk-title { color: var(--accent-orange); font-size: 14px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+
+        .hidden { opacity: 0 !important; }
+        .hide-box { display: none !important; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; overflow-y: auto; }
+            .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; }
+            .game-btn { min-width: 120px; justify-content: center; }
+            .main-content { padding: 15px; }
+            .dashboard-card { padding: 20px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div id="timer">WAITING</div>
+    <div class="sidebar">
+        <div class="brand"><i class="fas fa-gamepad"></i> Control: STiMEXs</div>
+        
+        <div>
+            <div class="menu-label">เลือกโหมดเกม</div>
+            <div class="game-btn active" onclick="selectGame('Roblox', 60, this)">
+                <i class="fas fa-cube"></i> Roblox
+            </div>
+            <div class="game-btn" onclick="selectGame('OnlyUp', 10, this)">
+                <i class="fas fa-arrow-up"></i> OnlyUp
+            </div>
+            <div class="game-btn" onclick="selectGame('Horror', 60, this)">
+                <i class="fas fa-ghost"></i> Horror
+            </div>
+            <div class="game-btn" onclick="selectGame('Talk', 0, this)">
+                <i class="fas fa-comment-dots"></i> Talk / Chat
+            </div>
+        </div>
+
+        <div style="margin-top: auto; font-size: 11px; color: #444; text-align: center;">
+            System v2.0 | Multi-Room Support
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="dashboard-card">
+            
+            <div class="header-row">
+                <div class="header-title">
+                    <h1>โหมด: <span id="gameTitle">Roblox</span></h1>
+                </div>
+                <div class="status-badge">
+                    <div id="statusDot" class="status-dot"></div>
+                    <span id="statusText">Connecting...</span>
+                </div>
+            </div>
+
+            <div class="control-label" style="text-align: left; margin-bottom: 5px;">LIVE PREVIEW (จอจำลอง)</div>
+            <div id="timer-container">
+                <div id="preview-display">60</div>
+            </div>
+
+            <div id="timer-controls" class="control-group">
+                <div class="control-label">ตั้งเวลา (วินาที)</div>
+                <input type="number" id="sec" value="60" min="1" onchange="updatePreviewStatic()">
+                
+                <div class="btn-group">
+                    <button class="btn-reset" onclick="handleReset()">
+                        <i class="fas fa-stop"></i> Reset (R)
+                    </button>
+                    <button class="btn-start" onclick="handleStart()">
+                        <i class="fas fa-play"></i> START (Space)
+                    </button>
+                </div>
+
+                <div id="ahk-section" class="ahk-box hide-box">
+                    <div class="ahk-title"><i class="fas fa-robot"></i> AutoHotkey: Room ID Setup</div>
+                    <div class="link-box" style="background: rgba(0,0,0,0.4); border-color: #555;">
+                        <input type="text" id="onlyUpRoomId" class="link-input" style="color: var(--accent-orange); font-weight: bold;" readonly>
+                        <button class="btn-copy-small" style="background: var(--accent-orange);" onclick="copyOnlyUpRoomId()">COPY ID</button>
+                    </div>
+                    <div style="font-size: 11px; color: #888;">นำ ID นี้ไปใส่ในไฟล์ .ahk ของคุณตรงส่วน <b>RoomID := "..."</b></div>
+                </div>
+            </div>
+
+            <div id="text-controls" class="control-group hide-box">
+                <div class="control-label">ข้อความที่จะส่ง (โชว์ 5 วินาที)</div>
+                <textarea id="textMsg" rows="2" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
+                
+                <div class="btn-group">
+                    <button class="btn-send" onclick="handleSendText()">
+                        <i class="fas fa-paper-plane"></i> ส่งขึ้นจอ (Enter)
+                    </button>
+                </div>
+            </div>
+
+            <div class="footer-section">
+                <div class="control-label" style="font-size: 12px;">🔗 Overlay Link (ใส่ใน OBS)</div>
+                <div class="link-box">
+                    <input type="text" id="overlayLink" class="link-input" readonly>
+                    <button class="btn-copy-small" onclick="copyLink()">COPY URL</button>
+                </div>
+                <button class="btn-new-room" onclick="generateNewRoom()">
+                    <i class="fas fa-sync"></i> สร้างห้องใหม่ / รีเซ็ตลิ้งค์
+                </button>
+            </div>
+
+        </div>
     </div>
 
     <script>
@@ -105,102 +355,231 @@
             measurementId: "G-DZ76HRE0RM"
         };
 
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        let currentRoomId = "";
+        let isTextMode = false;
+        let previewInterval = null;
+        let previewTimeout = null;
 
-        const params = new URLSearchParams(window.location.search);
-        const roomId = params.get('id');
-
-        const timerEl = document.getElementById('timer');
-        let timerInterval = null;
-        let fadeTimeout = null;
-
-        if (!roomId) {
-            timerEl.innerText = "NO ID";
-            timerEl.style.fontSize = "50px";
-        } else {
-            const dbRef = firebase.database().ref(roomId);
-
-            dbRef.on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    // ทุกครั้งที่มีข้อมูลมา ให้เคลียร์ Timeout ของการซ่อนข้อความก่อนหน้านี้เสมอ
-                    clearAllTimers(); 
-
-                    if (data.mode === 'stop') {
-                        timerEl.innerText = ""; 
-                        timerEl.className = ""; // ล้างคลาส
-                        
-                    } else if (data.mode === 'text') {
-                        // เรียกฟังก์ชันแสดงข้อความ
-                        showTextMessage(data.message);
-
-                    } else if (data.mode === 'running') {
-                        startSyncTimer(data.target, data.timestamp, data.game);
-                    }
-                }
-            });
+        try {
+            if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+            initRoom();
+            setStatus(true, "Online");
+        } catch (e) {
+            setStatus(false, "Error");
         }
 
-        // --- Logic: แสดงข้อความ (Talk) ---
-        function showTextMessage(msg) {
-            // 1. ล้างคลาสเก่าออกให้หมด (สำคัญมาก เผื่อติด hidden หรือ panic-mode)
-            timerEl.className = ""; 
-            
-            // 2. ใส่ข้อความ
-            timerEl.innerText = msg;
-            
-            // 3. ยัดคลาส text-message เข้าไป
-            void timerEl.offsetWidth; // Trigger Reflow (เทคนิคให้ Animation เล่นใหม่)
-            timerEl.classList.add("text-message");
-
-            // 4. ตั้งเวลา 5 วิ ให้ใส่คลาส hidden
-            fadeTimeout = setTimeout(() => {
-                timerEl.classList.remove("text-message"); // เอา animation ออกก่อน
-                timerEl.classList.add("hidden");
-            }, 5000);
+        function setStatus(isOnline, text) {
+            const dot = document.getElementById('statusDot');
+            const txt = document.getElementById('statusText');
+            if(isOnline) {
+                dot.classList.add('online');
+                txt.innerText = "Connected";
+                txt.style.color = "#00e676";
+            } else {
+                dot.classList.remove('online');
+                txt.innerText = text;
+                txt.style.color = "#ff5252";
+            }
         }
 
-        // --- Logic: จับเวลา (Timer) ---
-        function startSyncTimer(targetTime, startTime, gameTitle) {
-            timerEl.classList.remove("hidden"); // ปลุกให้ตื่นเผื่อหลับอยู่
+        function initRoom() {
+            let savedRoom = localStorage.getItem('my_room_id');
+            if (savedRoom) { currentRoomId = savedRoom; } 
+            else { generateNewRoom(); return; }
+            updateRoomUI();
+        }
 
-            timerInterval = setInterval(() => {
+        function generateNewRoom() {
+            const timestamp = new Date().getTime();
+            const randomStr = Math.random().toString(36).substring(2, 6);
+            currentRoomId = `room_${timestamp}_${randomStr}`;
+            localStorage.setItem('my_room_id', currentRoomId);
+            updateRoomUI();
+        }
+
+        function updateRoomUI() {
+            const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '').replace('control.html', ''); 
+            const cleanBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+            const fullLink = `${cleanBase}overlay1.html?id=${currentRoomId}`;
+            
+            document.getElementById('overlayLink').value = fullLink;
+            document.getElementById('onlyUpRoomId').value = currentRoomId; // อัปเดตช่อง Room ID
+            document.getElementById('roomIdDisplay').innerText = currentRoomId;
+        }
+
+        function copyLink() {
+            const copyText = document.getElementById("overlayLink");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            alert("คัดลอก URL เรียบร้อย!");
+        }
+
+        function copyOnlyUpRoomId() {
+            const copyText = document.getElementById("onlyUpRoomId");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value);
+            alert("คัดลอก Room ID เรียบร้อย! นำไปใส่ในสคริปต์ AHK ได้เลย");
+        }
+
+        function selectGame(gameName, defaultTime, btnElement) {
+            document.getElementById('gameTitle').innerText = gameName;
+            document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            // แสดง/ซ่อนช่อง ID สำหรับ OnlyUp
+            if(gameName === 'OnlyUp') {
+                document.getElementById('ahk-section').classList.remove('hide-box');
+            } else {
+                document.getElementById('ahk-section').classList.add('hide-box');
+            }
+
+            if (gameName === 'Talk') {
+                isTextMode = true;
+                document.getElementById('timer-controls').classList.add('hide-box');
+                document.getElementById('text-controls').classList.remove('hide-box');
+                resetPreview();
+                document.getElementById('preview-display').innerText = "พิมพ์ข้อความ...";
+                document.getElementById('preview-display').style.fontSize = "30px";
+                document.getElementById('preview-display').style.color = "#aaa";
+            } else {
+                isTextMode = false;
+                document.getElementById('timer-controls').classList.remove('hide-box');
+                document.getElementById('text-controls').classList.add('hide-box');
+                document.getElementById('sec').value = defaultTime;
+                resetPreview();
+                updatePreviewStatic();
+            }
+        }
+
+        function updatePreviewStatic() {
+            if(!isTextMode) {
+                const previewEl = document.getElementById('preview-display');
+                previewEl.innerText = document.getElementById('sec').value;
+                previewEl.className = "";
+                previewEl.style.fontSize = "70px";
+                previewEl.style.color = "white";
+            }
+        }
+
+        function startPreviewSimulation(duration, gameName) {
+            const previewEl = document.getElementById('preview-display');
+            const startTime = new Date().getTime();
+            const targetTime = startTime + (duration * 1000) + 2500; 
+
+            if(previewInterval) clearInterval(previewInterval);
+            if(previewTimeout) clearTimeout(previewTimeout);
+            previewEl.classList.remove('hidden');
+            previewEl.style.color = "white";
+
+            previewInterval = setInterval(() => {
                 const now = new Date().getTime();
                 const timeSinceStart = now - startTime;
-                
-                if (timeSinceStart < 2500) { // Intro Logic
-                    timerEl.className = "intro-text";
-                    if (gameTitle && gameTitle.includes('Roblox')) timerEl.innerText = "เริ่มนับถอยหลัง";
-                    else if (gameTitle && gameTitle.includes('OnlyUp')) timerEl.innerText = "FLY MODE";
-                    else timerEl.innerText = "ARE YOU READY?";
-                } else { // Countdown Logic
+
+                if (timeSinceStart < 2500) {
+                    previewEl.className = "preview-intro";
+                    if (gameName.includes('Roblox')) previewEl.innerText = "เริ่มนับถอยหลัง";
+                    else if (gameName.includes('OnlyUp')) previewEl.innerText = "FLY MODE";
+                    else previewEl.innerText = "ARE YOU READY?";
+                } else {
                     const diff = targetTime - now;
                     if (diff <= 0) {
-                        timerEl.innerText = "0"; 
-                        timerEl.className = "time-up-static";
-                        stopTimer();
-                        // จบแล้วรอ 2 วิ ค่อยหาย
-                        fadeTimeout = setTimeout(() => { timerEl.classList.add("hidden"); }, 2000);
+                        previewEl.innerText = "0";
+                        previewEl.className = "preview-static-red";
+                        clearInterval(previewInterval);
+                        previewTimeout = setTimeout(() => {
+                            previewEl.classList.add('hidden');
+                        }, 2000);
                     } else {
                         const secondsLeft = Math.ceil(diff / 1000);
-                        timerEl.innerText = secondsLeft;
-                        if (secondsLeft <= 3) timerEl.className = "panic-mode";
-                        else timerEl.className = "normal-count";
+                        previewEl.innerText = secondsLeft;
+                        if (secondsLeft <= 3) {
+                            previewEl.className = "preview-panic";
+                        } else {
+                            previewEl.className = "";
+                        }
                     }
                 }
             }, 50);
         }
 
-        function stopTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = null;
+        function showTextPreview(msg) {
+            const previewEl = document.getElementById('preview-display');
+            if(previewInterval) clearInterval(previewInterval);
+            if(previewTimeout) clearTimeout(previewTimeout);
+            previewEl.innerText = msg;
+            previewEl.className = "preview-text-msg";
+            previewEl.classList.remove('hidden');
+            previewTimeout = setTimeout(() => {
+                previewEl.classList.add('hidden');
+            }, 5000);
         }
 
-        function clearAllTimers() {
-            stopTimer();
-            if (fadeTimeout) { clearTimeout(fadeTimeout); fadeTimeout = null; }
-            timerEl.classList.remove("hidden"); // เอาการซ่อนออก
+        function resetPreview() {
+            if(previewInterval) clearInterval(previewInterval);
+            if(previewTimeout) clearTimeout(previewTimeout);
+            const previewEl = document.getElementById('preview-display');
+            previewEl.classList.remove('hidden');
+            previewEl.className = "";
+            previewEl.style.color = "white";
         }
+
+        function handleStart() {
+            if (!currentRoomId || isTextMode) return;
+            const duration = parseInt(document.getElementById('sec').value);
+            const now = new Date().getTime();
+            const targetTime = now + (duration * 1000) + 2500; 
+            const gameName = document.getElementById('gameTitle').innerText;
+            startPreviewSimulation(duration, gameName);
+            firebase.database().ref(currentRoomId).set({
+                mode: 'running',
+                target: targetTime,
+                duration: duration,
+                game: gameName,
+                timestamp: now
+            });
+        }
+
+        function handleReset() {
+            if (!currentRoomId) return;
+            resetPreview();
+            if(!isTextMode) updatePreviewStatic();
+            else {
+                const el = document.getElementById('preview-display');
+                el.innerText = "พิมพ์ข้อความ...";
+                el.style.fontSize = "30px";
+                el.style.color = "#aaa";
+            }
+            firebase.database().ref(currentRoomId).set({ mode: 'stop', target: 0 });
+        }
+
+        function handleSendText() {
+            if (!currentRoomId || !isTextMode) return;
+            const msg = document.getElementById('textMsg').value;
+            if (!msg.trim()) return alert("กรุณาพิมพ์ข้อความ");
+            const now = new Date().getTime();
+            showTextPreview(msg);
+            firebase.database().ref(currentRoomId).set({
+                mode: 'text',
+                message: msg,
+                timestamp: now,
+                duration: 5
+            });
+            document.getElementById('textMsg').value = "";
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (isTextMode && e.key === "Enter") {
+                e.preventDefault();
+                handleSendText();
+            }
+            if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") return;
+            if (!isTextMode) {
+                if (e.key === " ") { e.preventDefault(); handleStart(); }
+                if (e.key === "r" || e.key === "R") { handleReset(); }
+            }
+        });
     </script>
 </body>
 </html>
