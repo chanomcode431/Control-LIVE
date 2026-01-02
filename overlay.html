@@ -24,31 +24,18 @@
 
         /* โหมดสีแดง (3 วินาทีสุดท้าย) */
         .panic-mode {
-            font-size: 220px; /* ใหญ่สะใจ */
-            color: #ff0000;   /* แดงสด */
-            text-shadow: 8px 8px 0 #800000, -3px -3px 0 #800000;
+            font-size: 220px; color: #ff0000; text-shadow: 8px 8px 0 #800000;
             animation: pulse-fast 0.5s infinite;
         }
 
-        /* โหมดเตรียมบิน */
+        /* โหมด Intro (เตรียมบิน / เริ่มนับถอยหลัง) */
         .intro-mode {
-            font-size: 80px;
-            color: #00e676; /* เขียว */
-            text-shadow: 3px 3px 0 #000;
+            font-size: 80px; color: #00e676; text-shadow: 3px 3px 0 #000;
             animation: pulse-slow 1s infinite;
         }
 
-        @keyframes pulse-slow {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
-        @keyframes pulse-fast {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-            100% { transform: scale(1); }
-        }
+        @keyframes pulse-slow { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes pulse-fast { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -74,6 +61,7 @@
         let originalDuration = 0;
         let isRunning = false;
         let timerInterval = null;
+        let currentGameName = ""; 
 
         db.ref('timer').on('value', (snapshot) => {
             const data = snapshot.val();
@@ -81,12 +69,11 @@
                 if (data.mode === 'stop') {
                     isRunning = false;
                     const el = document.getElementById("timer");
-                    el.innerHTML = "0";
-                    el.style.opacity = "1";
-                    el.className = "timer";
+                    el.innerHTML = "0"; el.style.opacity = "1"; el.className = "timer";
                 } else if (data.mode === 'running') {
                     targetTimestamp = data.target;
                     originalDuration = data.duration * 1000;
+                    currentGameName = data.game || ""; 
                     isRunning = true;
                     document.getElementById("timer").style.opacity = "1";
                     startCountdown();
@@ -96,56 +83,53 @@
 
         function startCountdown() {
             if (timerInterval) clearInterval(timerInterval);
-
             timerInterval = setInterval(() => {
                 if (!isRunning) return;
-
                 const now = new Date().getTime();
                 const totalDistance = targetTimestamp - now;
                 const timerElement = document.getElementById("timer");
-                
-                // ช่วง Intro (เกินมาจากเวลาที่ตั้ง)
                 const introDiff = totalDistance - originalDuration;
 
+                // --- ช่วง Intro (ก่อนเริ่มนับจริง) ---
                 if (introDiff > 0) {
-                    // --- ช่วงเตรียมบิน ---
-                    timerElement.innerHTML = "FLY MODE✈️";
+                    
+                    let introText = "เตรียมบิน✈️"; // ค่าปกติ (เกมอื่น)
+                    
+                    // 🔥 เช็กชื่อเกมตรงนี้ (แปลงเป็นตัวเล็กให้หมดเพื่อกันพลาด)
+                    let checkName = (currentGameName || "").toLowerCase().trim();
+
+                    // ถ้าชื่อเกมมีคำว่า 'roblox'
+                    if (checkName.includes('roblox')) {
+                        introText = "เริ่มนับถอยหลัง"; 
+                        timerElement.style.fontSize = "60px"; // ลดขนาดฟอนต์ลงนิดหน่อยเพราะคำยาว
+                    } else {
+                        timerElement.style.fontSize = "80px"; // เกมอื่นตัวใหญ่ปกติ
+                    }
+
+                    timerElement.innerHTML = introText;
                     timerElement.className = "timer intro-mode";
+                
                 } else {
                     // --- ช่วงนับเวลาจริง ---
+                    timerElement.style.fontSize = ""; 
                     
                     if (totalDistance <= 0) {
-                        timerElement.innerHTML = "0"; // โชว์ 0 ก่อนหาย
+                        timerElement.innerHTML = "0"; 
                         setTimeout(() => { timerElement.style.opacity = "0"; }, 500);
-                        clearInterval(timerInterval);
-                        return;
+                        clearInterval(timerInterval); return;
                     }
 
-                    // 🔥 สูตรใหม่: ใช้ Math.ceil (ปัดเศษขึ้น)
-                    // ตัวอย่าง: เหลือ 9.9 วินาที -> ปัดเป็น 10 (จะได้เห็นเลข 10 ก่อน)
                     const totalSeconds = Math.ceil(totalDistance / 1000);
-
-                    // 🔥 เช็กว่าเหลือ 3 วินาทีสุดท้ายหรือไม่? (เลข 3, 2, 1)
-                    if (totalSeconds <= 3) { 
-                        timerElement.className = "timer panic-mode";
-                    } else {
-                        timerElement.className = "timer";
-                    }
-
-                    // การแสดงผล (ถ้ามากกว่า 60 วิ ให้โชว์นาทีด้วย)
-                    let displayTime = "";
-                    if (totalSeconds >= 60) {
-                        const minutes = Math.floor(totalSeconds / 60);
-                        const seconds = totalSeconds % 60;
-                        displayTime = (minutes < 10 ? "0" + minutes : minutes) + ":" + (seconds < 10 ? "0" + seconds : seconds);
-                    } else {
-                        // ถ้าไม่ถึงนาที โชว์เลขวินาทีเพียวๆ
-                        displayTime = totalSeconds;
-                    }
                     
+                    // 3 วิสุดท้าย (สีแดง)
+                    if (totalSeconds <= 3) { timerElement.className = "timer panic-mode"; } 
+                    else { timerElement.className = "timer"; }
+                    
+                    let displayTime = totalSeconds >= 60 ? 
+                        (Math.floor(totalSeconds / 60) + ":" + (totalSeconds % 60 < 10 ? "0" : "") + (totalSeconds % 60)) : totalSeconds;
                     timerElement.innerHTML = displayTime;
                 }
-            }, 50); // อัปเดตถี่ๆ
+            }, 50);
         }
     </script>
 </body>
