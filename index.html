@@ -163,6 +163,10 @@
         
         .status-badge-my { background: rgba(0, 230, 118, 0.2); color: var(--primary); padding: 5px 10px; border-radius: 10px; font-size: 12px; border: 1px solid var(--primary); }
         .status-badge-hijack { background: rgba(213, 0, 249, 0.2); color: var(--admin-purple); padding: 5px 10px; border-radius: 10px; font-size: 12px; border: 1px solid var(--admin-purple); }
+
+        /* Overlay link flash */
+        #overlayLink { transition: box-shadow 0.25s ease, border 0.25s ease; }
+        .overlay-updated { box-shadow: 0 0 12px var(--accent-blue); border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -296,7 +300,8 @@
                     <div class="control-label" style="font-size: 12px; text-align: left;">🔗 Overlay Link (OBS)</div>
                     <div style="display: flex; background: #121212; padding: 5px; border-radius: 8px; border: 1px solid #333; align-items: center;">
                         <input type="text" id="overlayLink" style="flex: 1; background: transparent; border: none; color: #aaa; padding: 8px; font-size: 12px; outline: none;" readonly>
-                        <button class="btn-mini" style="background: #333; color: white;" onclick="copyLink()">COPY</button>
+                        <button id="btn-copy-link" class="btn-mini" style="background: #333; color: white; margin-left:6px;" onclick="copyLink()">COPY</button>
+                        <button id="btn-refresh-link" class="btn-mini" style="background: #555; color: white; margin-left:6px;" onclick="refreshLink()"><i class="fas fa-sync"></i> REFRESH</button>
                     </div>
                 </div>
             </div>
@@ -488,7 +493,7 @@
         function updateRoomUI() {
             const url = window.location.href.split('?')[0].replace('index.html', '').replace('control.html', ''); 
             const baseUrl = url.endsWith('/') ? url : url + '/';
-            const fullLink = `${baseUrl}overlay.html?id=${currentRoomId}`;
+            const fullLink = `${baseUrl}overlay1.html?id=${currentRoomId}`; // point to actual file
             document.getElementById('overlayLink').value = fullLink;
             document.getElementById('onlyUpRoomId').value = currentRoomId; 
             const tInfo = document.getElementById('target-info');
@@ -571,6 +576,14 @@
         
         function copyLink() { navigator.clipboard.writeText(document.getElementById('overlayLink').value); alert("Copied!"); }
         function copyId() { navigator.clipboard.writeText(document.getElementById('onlyUpRoomId').value); alert("Copied!"); }
+
+        function refreshLink() {
+            if (!currentRoomId) { generateNewRoom(); }
+            updateRoomUI();
+            const el = document.getElementById('overlayLink');
+            el.classList.add('overlay-updated');
+            setTimeout(() => el.classList.remove('overlay-updated'), 1200);
+        }
 
         function updatePreviewStatic() {
             if(!isTextMode) {
