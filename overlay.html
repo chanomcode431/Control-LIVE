@@ -7,21 +7,19 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
     <style>
-        /* โหลดฟอนต์เท่ๆ (ถ้าต้องการ) */
         @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Kanit:wght@800&display=swap');
 
         body { 
             background-color: rgba(0, 0, 0, 0); 
             margin: 0; padding: 0; 
             overflow: hidden; 
-            font-family: 'Kanit', sans-serif; /* ฟอนต์ภาษาไทยหนาๆ */
+            font-family: 'Kanit', sans-serif;
             text-align: center;
             display: flex; 
             justify-content: center; 
             align-items: center; 
             height: 100vh;
             color: white;
-            /* เงาตัวหนังสือให้ชัดบนพื้นหลังเกม */
             text-shadow: 3px 3px 0px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
         }
 
@@ -32,30 +30,25 @@
             justify-content: center;
         }
 
-        #gameName {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 0px;
-            color: #00e676;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
+        /* ส่วน gameName เอาออกตามคำขอก่อนหน้านี้ */
 
         #timer {
-            font-size: 150px; /* ตัวเลขใหญ่สะใจ */
+            font-size: 150px;
             font-weight: 900;
-            font-family: 'Black Ops One', 'Kanit', sans-serif; /* ฟอนต์ตัวเลขแบบเกม */
+            font-family: 'Black Ops One', 'Kanit', sans-serif;
             line-height: 1;
+            /* ค่าเริ่มต้นคือเห็นชัด (opacity 1) */
+            opacity: 1; 
             transition: all 0.1s ease;
         }
 
-        /* สถานะตอนหยุด */
-        .stopped { color: #ff4444; font-size: 80px !important; }
+        /* สถานะตอนหยุด (Stop) */
+        .stopped { color: #ff4444; font-size: 80px !important; opacity: 1; }
         
         /* สถานะปกติ */
-        .normal-count { color: #ffffff; }
+        .normal-count { color: #ffffff; opacity: 1; }
 
-        /* --- เอฟเฟกต์ช่วง 3 วินาทีสุดท้าย --- */
+        /* --- เอฟเฟกต์ 3 วินาทีสุดท้าย (Panic) --- */
         @keyframes panic-pulse {
             0% { transform: scale(1); text-shadow: 0 0 10px red; }
             50% { transform: scale(1.3); text-shadow: 0 0 30px red, 0 0 50px yellow; }
@@ -64,15 +57,25 @@
 
         .panic-mode {
             color: #ff0000 !important;
-            animation: panic-pulse 0.5s infinite; /* เต้นตุบๆ เร็วๆ */
+            animation: panic-pulse 0.5s infinite;
+            opacity: 1;
         }
 
-        /* สไตล์สำหรับ Intro Text (FLY MODE / เริ่มนับถอยหลัง) */
+        /* --- [เพิ่มใหม่] เอฟเฟกต์ตอนจบ (Fade Out) --- */
+        .fade-out {
+            color: #ff0000 !important; /* สีแดง */
+            opacity: 0 !important;     /* จางหายไปจนมองไม่เห็น */
+            transform: scale(2);       /* ขยายใหญ่ขึ้นตอนหายไป (ถ้าไม่ชอบลบบรรทัดนี้ได้) */
+            transition: opacity 1.5s ease-out, transform 1.5s ease-out !important; /* ใช้เวลา 1.5 วิ ในการหายไป */
+        }
+
+        /* Intro Text */
         .intro-text {
             font-size: 80px !important;
-            color: #ffd700; /* สีทอง */
+            color: #ffd700;
             animation: fadeIn 0.5s ease-in-out;
             white-space: nowrap;
+            opacity: 1;
         }
 
         @keyframes fadeIn {
@@ -84,7 +87,6 @@
 <body>
 
     <div class="container">
-        <div id="gameName"></div>
         <div id="timer">WAITING</div>
     </div>
 
@@ -105,7 +107,6 @@
         const params = new URLSearchParams(window.location.search);
         const roomId = params.get('id');
 
-        const gameNameEl = document.getElementById('gameName');
         const timerEl = document.getElementById('timer');
         let timerInterval = null;
 
@@ -118,13 +119,13 @@
             dbRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
+
                     if (data.mode === 'stop') {
                         stopTimer();
                         timerEl.innerText = "STOP"; 
-                        timerEl.className = "stopped"; // คลาสหยุด
+                        timerEl.className = "stopped"; 
                         timerEl.style.fontSize = "80px";
                     } else if (data.mode === 'running') {
-                        // ส่งข้อมูล timestamp (เวลาเริ่มกด) มาด้วยเพื่อคำนวณ Intro
                         startSyncTimer(data.target, data.timestamp, data.game);
                     }
                 }
@@ -137,42 +138,40 @@
             timerInterval = setInterval(() => {
                 const now = new Date().getTime();
                 
-                // 1. คำนวณช่วง Intro (2.5 วินาทีแรกหลังจากกดปุ่ม)
+                // 1. Logic Intro
                 const timeSinceStart = now - startTime;
                 
                 if (timeSinceStart < 2500) {
-                    // --- ช่วงแสดง Intro Text ---
-                    timerEl.className = "intro-text"; // ใช้คลาสตัวหนังสือ Intro
+                    timerEl.className = "intro-text";
                     
-                    if (gameTitle.includes('Roblox')) {
+                    if (gameTitle && gameTitle.includes('Roblox')) {
                         timerEl.innerText = "เริ่มนับถอยหลัง";
-                    } else if (gameTitle.includes('OnlyUp')) {
+                    } else if (gameTitle && gameTitle.includes('OnlyUp')) {
                         timerEl.innerText = "FLY MODE";
                     } else {
                         timerEl.innerText = "ARE YOU READY?";
                     }
                 } else {
-                    // --- ช่วงนับเวลาถอยหลัง ---
+                    // 2. Logic Countdown
                     const diff = targetTime - now;
 
                     if (diff <= 0) {
-                        timerEl.innerText = "0"; // จบที่ 0
-                        timerEl.className = "panic-mode"; // ให้แดงค้างไว้ตอนจบ
+                        // --- [แก้ไขตรงนี้] จบเวลา ---
+                        timerEl.innerText = "0"; 
+                        timerEl.className = "fade-out"; // เรียกใช้คลาส Fade Out
                         stopTimer();
                     } else {
-                        // ปัดเศษขึ้นเพื่อให้เห็น 60, 59, 58...
                         const secondsLeft = Math.ceil(diff / 1000);
                         timerEl.innerText = secondsLeft;
 
-                        // ตรวจสอบเงื่อนไข 3-2-1
                         if (secondsLeft <= 3) {
-                            timerEl.className = "panic-mode"; // แดง + เต้น
+                            timerEl.className = "panic-mode";
                         } else {
-                            timerEl.className = "normal-count"; // สีขาวปกติ
+                            timerEl.className = "normal-count";
                         }
                     }
                 }
-            }, 50); // อัปเดตถี่ๆ เพื่อความลื่นไหล
+            }, 50);
         }
 
         function stopTimer() {
@@ -182,4 +181,3 @@
     </script>
 </body>
 </html>
-
