@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Game By STiMEXs (Multi-Room)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Kanit:wght@800&display=swap" rel="stylesheet">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        /* --- CSS เดิม (คงไว้ทั้งหมด) --- */
         * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, sans-serif; 
@@ -17,14 +18,17 @@
             display: flex;
             flex-direction: column;
         }
+
+        /* --- Navbar --- */
         .navbar {
             height: 60px; background: #1a1a1a; color: white; display: flex;
             align-items: center; justify-content: space-between; padding: 0 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 1000;
         }
         .nav-brand { font-size: 20px; font-weight: bold; color: #00e676; display: flex; align-items: center; gap: 10px; }
-        .nav-credit { font-size: 14px; color: #aaa; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; }
         .content-wrapper { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; }
+        
+        /* --- Sidebar --- */
         .sidebar { width: 250px; background: #ffffff; border-right: 1px solid #ddd; padding: 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
         .sidebar h2 { font-size: 16px; color: #555; margin-bottom: 10px; text-transform: uppercase; }
         .game-btn {
@@ -34,22 +38,26 @@
         }
         .game-btn:hover { background: #eef; border-color: #ccf; }
         .game-btn.active { background: #e6f7ff; border-color: #007bff; color: #007bff; }
+        
+        /* --- Main Content --- */
         .main-panel { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; background: #f0f2f5; }
         
         .container { 
-            background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 500px; 
+            background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 550px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center;
         }
         h1 { margin-top: 0; color: #333; font-size: 24px; }
         .current-game { color: #007bff; font-weight: bold; }
+        
         .input-box { margin: 20px 0; }
         input[type="number"] { 
-            font-size: 50px; width: 140px; text-align: center; 
+            font-size: 40px; width: 140px; text-align: center; 
             padding: 10px; border-radius: 15px; border: 2px solid #ddd; 
             color: #333; font-weight: bold; outline: none;
         }
         input[type="number"]:focus { border-color: #007bff; }
         label { display: block; margin-top: 10px; color: #888; font-size: 14px; }
+
         .btn-group { display: flex; gap: 15px; margin-top: 20px; }
         button { 
             flex: 1; padding: 15px; font-size: 18px; border-radius: 12px; 
@@ -60,6 +68,7 @@
         button:active { transform: scale(0.95); }
         .btn-start { background: linear-gradient(135deg, #28a745, #218838); }
         .btn-reset { background: linear-gradient(135deg, #dc3545, #c82333); }
+        
         #status { margin-top: 20px; color: #888; font-size: 14px; min-height: 20px; }
         .room-control { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: left; }
         .room-title { font-size: 14px; color: #555; margin-bottom: 8px; font-weight: bold; }
@@ -69,26 +78,62 @@
         .btn-new-room { margin-top: 10px; width: 100%; padding: 8px; font-size: 14px; background: #6c757d; color: white; border-radius: 5px; }
         .btn-new-room:hover { background: #5a6268; }
 
-        /* --- [ส่วนที่เพิ่มใหม่] CSS สำหรับตัวเลข Timer --- */
+        /* ========================================= */
+        /* --- [ส่วนที่แก้ไข] CSS Timer เหมือน Overlay --- */
+        /* ========================================= */
+        #timer-container {
+            background: #333; /* พื้นหลังจำลอง Overlay เพื่อให้เห็นสีชัดเจน */
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
         #timer {
-            font-size: 80px;
-            font-weight: bold;
-            color: #333;
-            margin: 10px 0;
-            font-family: monospace; /* ให้ตัวเลขกว้างเท่ากัน */
+            font-family: 'Black Ops One', 'Kanit', sans-serif;
+            font-size: 80px; /* ย่อลงนิดนึงจาก Overlay จริงเพื่อให้ลงล็อก */
+            font-weight: 900;
+            color: white;
+            line-height: 1;
+            text-shadow: 2px 2px 0px #000;
+            transition: all 0.1s ease;
+        }
+
+        /* Animation แบบเดียวกับ Overlay */
+        @keyframes panic-pulse {
+            0% { transform: scale(1); text-shadow: 0 0 10px red; }
+            50% { transform: scale(1.1); text-shadow: 0 0 20px red, 0 0 30px yellow; }
+            100% { transform: scale(1); text-shadow: 0 0 10px red; }
+        }
+
+        .panic-mode {
+            color: #ff0000 !important;
+            animation: panic-pulse 0.5s infinite;
+        }
+
+        .intro-text {
+            font-size: 40px !important; /* ปรับขนาดให้พอดีกับกล่อง Control */
+            color: #ffd700 !important; /* สีทอง */
+            white-space: nowrap;
         }
 
         @media (max-width: 700px) {
             .content-wrapper { flex-direction: column; }
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; border-bottom: 1px solid #ddd; border-right: none; height: auto; }
             .game-btn { flex: 0 0 auto; min-width: 120px; justify-content: center; padding: 10px; font-size: 14px; }
+            .intro-text { font-size: 24px !important; } /* มือถือย่อลงอีก */
         }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="nav-brand">🎮 Control Game By : STiMEXs</div>
+        <div class="nav-brand">🎮 Control Game</div>
+        <div style="font-size: 12px; color: #aaa;">By STiMEXs</div>
     </nav>
 
     <div class="content-wrapper">
@@ -104,7 +149,9 @@
             <div class="container">
                 <h1>ตั้งเวลา: <span id="gameTitle" class="current-game">Roblox</span></h1>
                 
-                <div id="timer">01:00</div>
+                <div id="timer-container">
+                    <div id="timer">60</div>
+                </div>
 
                 <div class="input-box">
                     <input type="number" id="sec" value="60" min="1" onchange="updateDurationFromInput()">
@@ -132,7 +179,6 @@
     </div>
 
     <script>
-        // --- 1. Firebase Logic (ของเดิม) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDgn9Vll-qcLhw7dcNtA9oGKy_BCRuefIs",
             authDomain: "control-tiktok.firebaseapp.com",
@@ -156,7 +202,7 @@
             document.getElementById('status').innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อ ❌";
         }
 
-        // --- 2. Room Management (ของเดิม) ---
+        // --- Room Management ---
         function initRoom() {
             let savedRoom = localStorage.getItem('my_room_id');
             if (savedRoom) { currentRoomId = savedRoom; } 
@@ -190,100 +236,111 @@
             setTimeout(() => btn.innerText = "Copy", 2000);
         }
 
-        // --- 3. Game Selection (ของเดิม + อัปเดต Timer) ---
         function selectGame(gameName, defaultTime, btnElement) {
             document.getElementById('gameTitle').innerText = gameName;
             document.getElementById('sec').value = defaultTime;
             document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
             
-            // อัปเดตเวลา local ทันทีเมื่อเปลี่ยนเกม
             updateDurationFromInput();
-            resetLocalTimer();
+            resetLocalTimer(); // รีเซ็ตการแสดงผล
         }
 
         // =========================================================
-        // --- [ส่วนที่เพิ่มใหม่] Logic Timer ตามที่คุณขอ ---
+        // --- [Logic ใหม่] ตัวจับเวลาหน้า Preview ให้เหมือน Overlay ---
         // =========================================================
 
-        let duration = 60; // ค่าเริ่มต้น
-        let remaining = duration;
-        let interval = null;
+        let duration = 60; 
+        let localInterval = null;
         const timerEl = document.getElementById("timer");
 
-        // ฟังก์ชันอ่านค่าจาก Input มาใส่ตัวแปร duration
         function updateDurationFromInput() {
             const val = parseInt(document.getElementById('sec').value);
             if(val > 0) {
                 duration = val;
-                // ถ้า Timer ไม่ได้เดินอยู่ ให้ปรับตัวเลขโชว์เลย
-                if (!interval) {
-                    remaining = duration;
-                    timerEl.textContent = formatTime(remaining);
+                if (!localInterval) {
+                    timerEl.innerText = duration;
+                    timerEl.className = ""; // ล้าง class
                 }
             }
         }
 
-        function formatTime(sec) {
-            const m = Math.floor(sec / 60);
-            const s = sec % 60;
-            return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-        }
+        // ฟังก์ชันจำลองการทำงานเหมือน Overlay (Intro -> Count -> Panic)
+        function startSimulation(startTime, targetTime, gameTitle) {
+            if (localInterval) clearInterval(localInterval);
 
-        function startLocalTimer() {
-            if (interval) return;
-            
-            // อัปเดต duration ล่าสุดจาก input ก่อนเริ่ม
-            updateDurationFromInput();
-            
-            // ถ้าเป็น 0 หรือค่ารีเซ็ตอยู่ ให้เริ่มจาก duration
-            if (remaining <= 0) remaining = duration;
+            // ปรับ logic ให้เหมือน overlay: ตรวจสอบทุก 50ms
+            localInterval = setInterval(() => {
+                const now = new Date().getTime();
+                
+                // 1. Logic Intro (2.5 วินาทีแรก)
+                const timeSinceStart = now - startTime;
+                
+                if (timeSinceStart < 2500) {
+                    timerEl.className = "intro-text";
+                    if (gameTitle.includes('Roblox')) {
+                        timerEl.innerText = "เริ่มนับถอยหลัง";
+                    } else if (gameTitle.includes('OnlyUp')) {
+                        timerEl.innerText = "FLY MODE";
+                    } else {
+                        timerEl.innerText = "ARE YOU READY?";
+                    }
+                } else {
+                    // 2. Logic Countdown
+                    const diff = targetTime - now;
 
-            interval = setInterval(() => {
-                remaining--;
-                timerEl.textContent = formatTime(remaining);
+                    if (diff <= 0) {
+                        timerEl.innerText = "0";
+                        timerEl.className = "panic-mode";
+                        clearInterval(localInterval);
+                        localInterval = null;
+                    } else {
+                        const secondsLeft = Math.ceil(diff / 1000);
+                        timerEl.innerText = secondsLeft;
 
-                if (remaining <= 0) {
-                    stopLocalTimer();
+                        // 3. Logic Panic (3 วิสุดท้าย)
+                        if (secondsLeft <= 3) {
+                            timerEl.className = "panic-mode";
+                        } else {
+                            timerEl.className = ""; // สีขาวปกติ
+                        }
+                    }
                 }
-            }, 1000);
+            }, 50);
         }
 
-        function stopLocalTimer() {
-            clearInterval(interval);
-            interval = null;
+        function stopLocalSimulation() {
+            if (localInterval) clearInterval(localInterval);
+            localInterval = null;
         }
 
         function resetLocalTimer() {
-            stopLocalTimer();
-            updateDurationFromInput(); // ดึงค่าล่าสุด
-            remaining = duration;
-            timerEl.textContent = formatTime(remaining);
+            stopLocalSimulation();
+            updateDurationFromInput();
+            timerEl.innerText = duration;
+            timerEl.className = "";
         }
 
-        // =========================================================
-        // --- [ส่วนเชื่อมต่อ] ผสาน Local Timer เข้ากับ Firebase Sender ---
-        // =========================================================
+        // --- Main Functions ---
 
-        // ฟังก์ชันหลัก: กดปุ่ม Start หรือกด Spacebar -> ทำทั้ง 2 อย่าง
         function handleStart() {
             if (!currentRoomId) return alert("รหัสห้องไม่ถูกต้อง");
             
-            // 1. เริ่ม Timer บนหน้าจอนี้ (Local)
-            startLocalTimer();
-
-            // 2. ส่งคำสั่งไป Firebase (Remote)
-            const now = new Date().getTime();
-            const introTime = 3000; // ดีเลย์ 3 วิ (ถ้ามี video intro)
-            // ถ้าไม่มี intro ให้เอา introTime ออก
+            updateDurationFromInput(); // อ่านค่าล่าสุด
             
-            const targetTime = now + (remaining * 1000); // ส่งเวลาที่เหลือปัจจุบันไป
+            const now = new Date().getTime();
+            const introTime = 2500; // เวลา Intro ตาม Overlay
+            const targetTime = now + (duration * 1000) + introTime;
             const gameName = document.getElementById('gameTitle').innerText;
 
+            // 1. เริ่มแสดงผลหน้าจอนี้ (Simulation)
+            startSimulation(now, targetTime, gameName);
+
+            // 2. ส่งไป Firebase
             firebase.database().ref(currentRoomId).set({
                 mode: 'running',
                 target: targetTime,
-                duration: remaining, // ส่งเวลาที่เหลือไป
+                duration: duration,
                 game: gameName,
                 timestamp: now
             });
@@ -291,14 +348,11 @@
             document.getElementById('status').innerText = "สถานะ: กำลังจับเวลา... ⏳";
         }
 
-        // ฟังก์ชันหลัก: กดปุ่ม Reset หรือกด R
         function handleReset() {
             if (!currentRoomId) return;
 
-            // 1. รีเซ็ตหน้าจอนี้
             resetLocalTimer();
 
-            // 2. ส่งคำสั่ง Reset ไป Firebase
             firebase.database().ref(currentRoomId).set({
                 mode: 'stop',
                 target: 0
@@ -306,34 +360,31 @@
             document.getElementById('status').innerText = "สถานะ: รีเซ็ตแล้ว ⏹️";
         }
         
-        // ฟังก์ชันหลัก: กดปุ่ม Stop (ไม่มีปุ่มแต่มีคีย์ลัด S)
         function handleStop() {
-            stopLocalTimer();
-             // ส่งไปบอก Firebase ให้หยุด (อาจจะต้องเพิ่ม Logic pause ใน Overlay ถ้าต้องการ)
-             // ในที่นี้ส่ง Reset ไปก่อน หรือปล่อยว่างไว้ถ้าแค่หยุดดูเอง
-             document.getElementById('status').innerText = "สถานะ: หยุดชั่วคราว ⏸️";
+             // หยุดแค่หน้าจอเรา แต่ Firebase ปล่อย running ต่อ หรือจะสั่งหยุดก็ได้
+             // ในที่นี้ขอหยุดแค่ Simulation เพื่อดู
+             stopLocalSimulation();
+             document.getElementById('status').innerText = "สถานะ: หยุดการแสดงผล (Server ยังวิ่งอยู่)";
         }
 
-        // --- คีย์ลัด (ตามที่คุณขอ) ---
+        // --- Shortcuts ---
         document.addEventListener("keydown", (e) => {
-            // เช็คว่าไม่ได้พิมพ์อยู่ในช่อง Input (กันพลาดเวลากรอกตัวเลข)
             if (document.activeElement.tagName === "INPUT") return;
 
             if (e.key === " ") {
-                e.preventDefault(); // กันหน้าเว็บเลื่อนลง
-                handleStart();      // Space = เริ่ม (ทั้ง Local และ Firebase)
+                e.preventDefault(); 
+                handleStart();
             }
             if (e.key === "r" || e.key === "R") {
-                handleReset();      // R = รีเซ็ต
+                handleReset();
             }
             if (e.key === "s" || e.key === "S") {
-                handleStop();       // S = หยุด (Local)
+                handleStop();
             }
         });
 
-        // เริ่มต้น: โชว์เวลาครั้งแรก
+        // Init
         updateDurationFromInput();
     </script>
 </body>
 </html>
-
