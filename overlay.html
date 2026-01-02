@@ -36,12 +36,12 @@
             font-family: 'Black Ops One', 'Kanit', sans-serif;
             line-height: 1;
             opacity: 1; 
-            transition: opacity 0.2s ease; /* ปกติเปลี่ยนไวๆ */
+            transition: opacity 1s ease-out; /* ตั้งเวลาให้ค่อยๆ หายไปใน 1 วินาที */
         }
 
-        /* สถานะตอนหยุด */
-        .stopped { color: #ff4444; font-size: 80px !important; opacity: 1; }
-        .normal-count { color: #ffffff; opacity: 1; }
+        /* สถานะหยุด/ปกติ */
+        .stopped { color: #ff4444; font-size: 80px !important; }
+        .normal-count { color: #ffffff; }
 
         /* --- เอฟเฟกต์ 3 วินาทีสุดท้าย --- */
         @keyframes panic-pulse {
@@ -53,30 +53,26 @@
         .panic-mode {
             color: #ff0000 !important;
             animation: panic-pulse 0.5s infinite;
-            opacity: 1;
         }
 
-        /* --- [แก้ไข] เอฟเฟกต์ตอนจบ (Fade Out) --- */
-        .fade-out {
-            /* 1. สั่งหยุดการเต้นทันที (สำคัญมาก) */
-            animation: none !important; 
-            
-            /* 2. สั่งให้จางหายไป */
-            opacity: 0 !important;     
-            
-            /* 3. สั่งให้ขยายใหญ่ขึ้นตอนหาย (ถ้าไม่ชอบให้ลบ transform ออก) */
-            transform: scale(2);       
-
-            /* 4. ตั้งเวลาการหายไป (1.5 วินาที) */
-            transition: opacity 1.5s ease-out, transform 1.5s ease-out !important; 
+        /* --- คลาสสำหรับเลข 0 (ค้างไว้เฉยๆ สีแดง) --- */
+        .time-up-static {
+            color: #ff0000 !important;
+            transform: scale(1.5); /* ขยายใหญ่นิดนึงตอนจบ */
+            animation: none !important; /* หยุดเต้น */
         }
 
+        /* --- คลาสสั่งให้หายไป --- */
+        .hidden {
+            opacity: 0 !important;
+        }
+
+        /* Intro Text */
         .intro-text {
             font-size: 80px !important;
             color: #ffd700;
             animation: fadeIn 0.5s ease-in-out;
             white-space: nowrap;
-            opacity: 1;
         }
 
         @keyframes fadeIn {
@@ -110,6 +106,7 @@
 
         const timerEl = document.getElementById('timer');
         let timerInterval = null;
+        let fadeTimeout = null; // ตัวแปรเก็บการนับถอยหลังหายตัว
 
         if (!roomId) {
             timerEl.innerText = "NO ID";
@@ -120,14 +117,17 @@
             dbRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
+                    // ถ้ามีการอัปเดตใดๆ ให้ยกเลิกการหายตัวที่รออยู่ทันที
+                    clearFade();
 
                     if (data.mode === 'stop') {
                         stopTimer();
-                        // ถ้าหยุดโดยการกด Reset ให้โชว์คำว่า STOP (หรือจะแก้เป็น "" ให้หายไปเลยก็ได้)
                         timerEl.innerText = "STOP"; 
                         timerEl.className = "stopped"; 
                         timerEl.style.fontSize = "80px";
+                        timerEl.classList.remove("hidden"); // แสดงผลกลับมาถ้าโดนซ่อนอยู่
                     } else if (data.mode === 'running') {
+                        timerEl.classList.remove("hidden"); // แสดงผลกลับมา
                         startSyncTimer(data.target, data.timestamp, data.game);
                     }
                 }
@@ -140,6 +140,7 @@
             timerInterval = setInterval(() => {
                 const now = new Date().getTime();
                 
+                // 1. Logic Intro
                 const timeSinceStart = now - startTime;
                 
                 if (timeSinceStart < 2500) {
@@ -152,13 +153,20 @@
                         timerEl.innerText = "ARE YOU READY?";
                     }
                 } else {
+                    // 2. Logic Countdown
                     const diff = targetTime - now;
 
                     if (diff <= 0) {
-                        // --- จังหวะจบเวลา ---
+                        // --- จบเวลา ---
                         timerEl.innerText = "0"; 
-                        timerEl.className = "fade-out"; // เรียกใช้ class นี้เพื่อหายตัว
+                        timerEl.className = "time-up-static"; // เป็นสีแดงนิ่งๆ
                         stopTimer();
+
+                        // --- สั่งรอ 2 วินาที แล้วค่อยหายไป ---
+                        fadeTimeout = setTimeout(() => {
+                            timerEl.classList.add("hidden"); // สั่ง Fade Out
+                        }, 2000); // 2000 ms = 2 วินาที
+                        
                     } else {
                         const secondsLeft = Math.ceil(diff / 1000);
                         timerEl.innerText = secondsLeft;
@@ -176,6 +184,14 @@
         function stopTimer() {
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = null;
+        }
+
+        // ฟังก์ชันยกเลิกการรอหายตัว (ป้องกันบั๊กเวลากด Reset เร็วๆ)
+        function clearFade() {
+            if (fadeTimeout) {
+                clearTimeout(fadeTimeout);
+                fadeTimeout = null;
+            }
         }
     </script>
 </body>
