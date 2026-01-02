@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Game By STiMEXs (Multi-Room)</title>
+    <title>Control Game By STiMEXs</title>
     <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Kanit:wght@800&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -12,14 +12,9 @@
         * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, sans-serif; 
-            margin: 0; padding: 0; 
-            background: #f0f2f5; 
-            height: 100vh; 
-            display: flex;
-            flex-direction: column;
+            margin: 0; padding: 0; background: #f0f2f5; 
+            height: 100vh; display: flex; flex-direction: column;
         }
-
-        /* --- Navbar --- */
         .navbar {
             height: 60px; background: #1a1a1a; color: white; display: flex;
             align-items: center; justify-content: space-between; padding: 0 20px;
@@ -28,7 +23,6 @@
         .nav-brand { font-size: 20px; font-weight: bold; color: #00e676; display: flex; align-items: center; gap: 10px; }
         .content-wrapper { display: flex; flex: 1; height: calc(100vh - 60px); overflow: hidden; }
         
-        /* --- Sidebar --- */
         .sidebar { width: 250px; background: #ffffff; border-right: 1px solid #ddd; padding: 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
         .sidebar h2 { font-size: 16px; color: #555; margin-bottom: 10px; text-transform: uppercase; }
         .game-btn {
@@ -39,7 +33,6 @@
         .game-btn:hover { background: #eef; border-color: #ccf; }
         .game-btn.active { background: #e6f7ff; border-color: #007bff; color: #007bff; }
         
-        /* --- Main Content --- */
         .main-panel { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; background: #f0f2f5; }
         
         .container { 
@@ -49,14 +42,34 @@
         h1 { margin-top: 0; color: #333; font-size: 24px; }
         .current-game { color: #007bff; font-weight: bold; }
         
-        .input-box { margin: 20px 0; }
+        /* --- กล่องแสดงผลจำลอง --- */
+        #timer-container {
+            background: #333; padding: 20px; border-radius: 15px; margin: 20px 0;
+            min-height: 120px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        #preview-display {
+            font-family: 'Black Ops One', 'Kanit', sans-serif;
+            font-size: 60px; font-weight: 900; color: white;
+            line-height: 1.2; text-shadow: 2px 2px 0px #000;
+            word-wrap: break-word; max-width: 100%;
+        }
+
+        /* --- Input Controls --- */
+        .control-group { margin: 20px 0; }
+        
+        /* Timer Input */
         input[type="number"] { 
             font-size: 40px; width: 140px; text-align: center; 
             padding: 10px; border-radius: 15px; border: 2px solid #ddd; 
             color: #333; font-weight: bold; outline: none;
         }
-        input[type="number"]:focus { border-color: #007bff; }
-        label { display: block; margin-top: 10px; color: #888; font-size: 14px; }
+        
+        /* Text Input (สำหรับ Talk) */
+        textarea {
+            width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #ddd;
+            font-size: 20px; font-family: 'Kanit', sans-serif; resize: none; outline: none;
+        }
+        textarea:focus, input:focus { border-color: #007bff; }
 
         .btn-group { display: flex; gap: 15px; margin-top: 20px; }
         button { 
@@ -68,71 +81,30 @@
         button:active { transform: scale(0.95); }
         .btn-start { background: linear-gradient(135deg, #28a745, #218838); }
         .btn-reset { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .btn-send { background: linear-gradient(135deg, #007bff, #0056b3); }
         
         #status { margin-top: 20px; color: #888; font-size: 14px; min-height: 20px; }
         .room-control { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: left; }
-        .room-title { font-size: 14px; color: #555; margin-bottom: 8px; font-weight: bold; }
-        .link-display { display: flex; gap: 5px; }
+        .link-display { display: flex; gap: 5px; margin-top: 5px;}
         .link-input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 12px; background: #f9f9f9; color: #555; }
-        .btn-copy-small { padding: 8px 15px; font-size: 12px; background: #007bff; flex: 0 0 auto; }
-        .btn-new-room { margin-top: 10px; width: 100%; padding: 8px; font-size: 14px; background: #6c757d; color: white; border-radius: 5px; }
-        .btn-new-room:hover { background: #5a6268; }
+        .btn-copy-small { padding: 8px 15px; font-size: 12px; background: #007bff; color: white; border-radius: 5px; border: none; cursor: pointer;}
+        .btn-new-room { margin-top: 10px; width: 100%; padding: 8px; font-size: 14px; background: #6c757d; color: white; border-radius: 5px; border: none; cursor: pointer;}
 
-        /* ========================================= */
-        /* --- [ส่วนที่แก้ไข] CSS Timer เหมือน Overlay --- */
-        /* ========================================= */
-        #timer-container {
-            background: #333; /* พื้นหลังจำลอง Overlay เพื่อให้เห็นสีชัดเจน */
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px 0;
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        #timer {
-            font-family: 'Black Ops One', 'Kanit', sans-serif;
-            font-size: 80px; /* ย่อลงนิดนึงจาก Overlay จริงเพื่อให้ลงล็อก */
-            font-weight: 900;
-            color: white;
-            line-height: 1;
-            text-shadow: 2px 2px 0px #000;
-            transition: all 0.1s ease;
-        }
-
-        /* Animation แบบเดียวกับ Overlay */
-        @keyframes panic-pulse {
-            0% { transform: scale(1); text-shadow: 0 0 10px red; }
-            50% { transform: scale(1.1); text-shadow: 0 0 20px red, 0 0 30px yellow; }
-            100% { transform: scale(1); text-shadow: 0 0 10px red; }
-        }
-
-        .panic-mode {
-            color: #ff0000 !important;
-            animation: panic-pulse 0.5s infinite;
-        }
-
-        .intro-text {
-            font-size: 40px !important; /* ปรับขนาดให้พอดีกับกล่อง Control */
-            color: #ffd700 !important; /* สีทอง */
-            white-space: nowrap;
-        }
+        /* Utilities */
+        .hidden { display: none !important; }
 
         @media (max-width: 700px) {
             .content-wrapper { flex-direction: column; }
             .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; border-bottom: 1px solid #ddd; border-right: none; height: auto; }
             .game-btn { flex: 0 0 auto; min-width: 120px; justify-content: center; padding: 10px; font-size: 14px; }
-            .intro-text { font-size: 24px !important; } /* มือถือย่อลงอีก */
         }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="nav-brand">🎮 Control Game By STiMEXs</div>
+        <div class="nav-brand">🎮 Control Game</div>
+        <div style="font-size: 12px; color: #aaa;">By STiMEXs</div>
     </nav>
 
     <div class="content-wrapper">
@@ -141,36 +113,43 @@
             <div class="game-btn active" onclick="selectGame('Roblox', 60, this)">🧱 Roblox</div>
             <div class="game-btn" onclick="selectGame('OnlyUp', 10, this)">⬆️ OnlyUp</div>
             <div class="game-btn" onclick="selectGame('Horror', 60, this)">👻 Horror</div>
-            <div class="game-btn" onclick="selectGame('Just Chat', 600, this)">💬 Talk</div>
+            <div class="game-btn" onclick="selectGame('Talk', 0, this)">💬 Talk</div>
         </div>
 
         <div class="main-panel">
             <div class="container">
-                <h1>ตั้งเวลา: <span id="gameTitle" class="current-game">Roblox</span></h1>
+                <h1>โหมด: <span id="gameTitle" class="current-game">Roblox</span></h1>
                 
                 <div id="timer-container">
-                    <div id="timer">60</div>
+                    <div id="preview-display">60</div>
                 </div>
 
-                <div class="input-box">
-                    <input type="number" id="sec" value="60" min="1" onchange="updateDurationFromInput()">
+                <div id="timer-controls" class="control-group">
+                    <input type="number" id="sec" value="60" min="1" onchange="updatePreview()">
                     <label>วินาทีที่ต้องการนับ</label>
+                    <div class="btn-group">
+                        <button class="btn-reset" onclick="handleReset()">⏹️ Reset (R)</button>
+                        <button class="btn-start" onclick="handleStart()">▶️ Start (Space)</button>
+                    </div>
                 </div>
 
-                <div class="btn-group">
-                    <button class="btn-reset" onclick="handleReset()">⏹️ Reset (R)</button>
-                    <button class="btn-start" onclick="handleStart()">▶️ Start (Space)</button>
+                <div id="text-controls" class="control-group hidden">
+                    <textarea id="textMsg" rows="2" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
+                    <label>ข้อความจะแสดง 5 วินาที</label>
+                    <div class="btn-group">
+                        <button class="btn-send" onclick="handleSendText()">🚀 ส่งข้อความ (Enter)</button>
+                    </div>
                 </div>
 
                 <div id="status">สถานะ: พร้อมเชื่อมต่อ...</div>
                 
                 <div class="room-control">
-                    <div class="room-title">🔗 ลิ้งค์ Overlay (สำหรับห้องนี้):</div>
+                    <div style="font-size: 14px; font-weight: bold; color: #555;">🔗 ลิ้งค์ Overlay:</div>
                     <div class="link-display">
                         <input type="text" id="overlayLink" class="link-input" readonly>
                         <button class="btn-copy-small" onclick="copyLink()">Copy</button>
                     </div>
-                    <button class="btn-new-room" onclick="generateNewRoom()">🔄 ขอห้องใหม่ / เปลี่ยนลิ้งค์</button>
+                    <button class="btn-new-room" onclick="generateNewRoom()">🔄 เปลี่ยนห้อง / รีเซ็ตลิ้งค์</button>
                     <div style="font-size: 10px; color: #aaa; margin-top: 5px; text-align: center;">ID: <span id="roomIdDisplay">...</span></div>
                 </div>
             </div>
@@ -190,18 +169,17 @@
         };
 
         let currentRoomId = "";
-        let db;
+        let isTextMode = false; // เช็คว่าอยู่โหมด Talk ไหม
 
         try {
             if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-            db = firebase.database();
             initRoom();
             document.getElementById('status').innerText = "สถานะ: เชื่อมต่อ Server แล้ว ✅";
         } catch (e) {
-            document.getElementById('status').innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อ ❌";
+            document.getElementById('status').innerText = "Connection Error ❌";
         }
 
-        // --- Room Management ---
+        // --- Room Logic ---
         function initRoom() {
             let savedRoom = localStorage.getItem('my_room_id');
             if (savedRoom) { currentRoomId = savedRoom; } 
@@ -230,112 +208,56 @@
             copyText.select();
             copyText.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(copyText.value);
-            const btn = document.querySelector('.btn-copy-small');
-            btn.innerText = "Copied!";
-            setTimeout(() => btn.innerText = "Copy", 2000);
+            alert("คัดลอกลิ้งค์แล้ว!");
         }
 
+        // --- Game Selection Logic ---
         function selectGame(gameName, defaultTime, btnElement) {
             document.getElementById('gameTitle').innerText = gameName;
-            document.getElementById('sec').value = defaultTime;
+            
+            // จัดการปุ่ม Active
             document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
-            
-            updateDurationFromInput();
-            resetLocalTimer(); // รีเซ็ตการแสดงผล
-        }
 
-        // =========================================================
-        // --- [Logic ใหม่] ตัวจับเวลาหน้า Preview ให้เหมือน Overlay ---
-        // =========================================================
-
-        let duration = 60; 
-        let localInterval = null;
-        const timerEl = document.getElementById("timer");
-
-        function updateDurationFromInput() {
-            const val = parseInt(document.getElementById('sec').value);
-            if(val > 0) {
-                duration = val;
-                if (!localInterval) {
-                    timerEl.innerText = duration;
-                    timerEl.className = ""; // ล้าง class
-                }
+            // เช็คว่าเป็นโหมด Talk หรือไม่
+            if (gameName === 'Talk') {
+                isTextMode = true;
+                // ซ่อนตัวคุมเวลา โชว์ตัวคุมข้อความ
+                document.getElementById('timer-controls').classList.add('hidden');
+                document.getElementById('text-controls').classList.remove('hidden');
+                document.getElementById('preview-display').innerText = "พิมพ์ข้อความ...";
+                document.getElementById('preview-display').style.fontSize = "30px";
+            } else {
+                isTextMode = false;
+                // โชว์ตัวคุมเวลา ซ่อนตัวคุมข้อความ
+                document.getElementById('timer-controls').classList.remove('hidden');
+                document.getElementById('text-controls').classList.add('hidden');
+                document.getElementById('sec').value = defaultTime;
+                updatePreview();
+                document.getElementById('preview-display').style.fontSize = "60px";
             }
         }
 
-        // ฟังก์ชันจำลองการทำงานเหมือน Overlay (Intro -> Count -> Panic)
-        function startSimulation(startTime, targetTime, gameTitle) {
-            if (localInterval) clearInterval(localInterval);
-
-            // ปรับ logic ให้เหมือน overlay: ตรวจสอบทุก 50ms
-            localInterval = setInterval(() => {
-                const now = new Date().getTime();
-                
-                // 1. Logic Intro (2.5 วินาทีแรก)
-                const timeSinceStart = now - startTime;
-                
-                if (timeSinceStart < 2500) {
-                    timerEl.className = "intro-text";
-                    if (gameTitle.includes('Roblox')) {
-                        timerEl.innerText = "เริ่มนับถอยหลัง";
-                    } else if (gameTitle.includes('OnlyUp')) {
-                        timerEl.innerText = "FLY MODE";
-                    } else {
-                        timerEl.innerText = "ARE YOU READY?";
-                    }
-                } else {
-                    // 2. Logic Countdown
-                    const diff = targetTime - now;
-
-                    if (diff <= 0) {
-                        timerEl.innerText = "0";
-                        timerEl.className = "panic-mode";
-                        clearInterval(localInterval);
-                        localInterval = null;
-                    } else {
-                        const secondsLeft = Math.ceil(diff / 1000);
-                        timerEl.innerText = secondsLeft;
-
-                        // 3. Logic Panic (3 วิสุดท้าย)
-                        if (secondsLeft <= 3) {
-                            timerEl.className = "panic-mode";
-                        } else {
-                            timerEl.className = ""; // สีขาวปกติ
-                        }
-                    }
-                }
-            }, 50);
+        function updatePreview() {
+            if(!isTextMode) {
+                document.getElementById('preview-display').innerText = document.getElementById('sec').value;
+            }
         }
 
-        function stopLocalSimulation() {
-            if (localInterval) clearInterval(localInterval);
-            localInterval = null;
-        }
-
-        function resetLocalTimer() {
-            stopLocalSimulation();
-            updateDurationFromInput();
-            timerEl.innerText = duration;
-            timerEl.className = "";
-        }
-
-        // --- Main Functions ---
-
+        // --- Functions: Timer Mode ---
         function handleStart() {
-            if (!currentRoomId) return alert("รหัสห้องไม่ถูกต้อง");
+            if (!currentRoomId || isTextMode) return;
             
-            updateDurationFromInput(); // อ่านค่าล่าสุด
-            
+            const duration = parseInt(document.getElementById('sec').value);
             const now = new Date().getTime();
-            const introTime = 2500; // เวลา Intro ตาม Overlay
-            const targetTime = now + (duration * 1000) + introTime;
+            const targetTime = now + (duration * 1000) + 2500; // +Intro
             const gameName = document.getElementById('gameTitle').innerText;
 
-            // 1. เริ่มแสดงผลหน้าจอนี้ (Simulation)
-            startSimulation(now, targetTime, gameName);
-
-            // 2. ส่งไป Firebase
+            // Preview Animation (Simple)
+            let count = duration;
+            document.getElementById('preview-display').innerText = count;
+            
+            // Send to Firebase
             firebase.database().ref(currentRoomId).set({
                 mode: 'running',
                 target: targetTime,
@@ -343,48 +265,56 @@
                 game: gameName,
                 timestamp: now
             });
-            
-            document.getElementById('status').innerText = "สถานะ: กำลังจับเวลา... ⏳";
+            document.getElementById('status').innerText = "สถานะ: ส่งคำสั่งจับเวลา... ⏱️";
         }
 
         function handleReset() {
             if (!currentRoomId) return;
-
-            resetLocalTimer();
-
-            firebase.database().ref(currentRoomId).set({
-                mode: 'stop',
-                target: 0
-            });
-            document.getElementById('status').innerText = "สถานะ: รีเซ็ตแล้ว ⏹️";
+            firebase.database().ref(currentRoomId).set({ mode: 'stop', target: 0 });
+            document.getElementById('status').innerText = "สถานะ: รีเซ็ต ⏹️";
+            if(!isTextMode) updatePreview();
         }
-        
-        function handleStop() {
-             // หยุดแค่หน้าจอเรา แต่ Firebase ปล่อย running ต่อ หรือจะสั่งหยุดก็ได้
-             // ในที่นี้ขอหยุดแค่ Simulation เพื่อดู
-             stopLocalSimulation();
-             document.getElementById('status').innerText = "สถานะ: หยุดการแสดงผล (Server ยังวิ่งอยู่)";
+
+        // --- Functions: Text Mode (Talk) ---
+        function handleSendText() {
+            if (!currentRoomId || !isTextMode) return;
+
+            const msg = document.getElementById('textMsg').value;
+            if (!msg.trim()) return alert("กรุณาพิมพ์ข้อความ");
+
+            const now = new Date().getTime();
+
+            // Preview บนจอ
+            document.getElementById('preview-display').innerText = msg;
+
+            // Send to Firebase
+            firebase.database().ref(currentRoomId).set({
+                mode: 'text',     // โหมดใหม่สำหรับข้อความ
+                message: msg,     // ข้อความ
+                timestamp: now,    // เวลาที่ส่ง
+                duration: 5       // บอก Overlay ว่าโชว์ 5 วิ
+            });
+
+            document.getElementById('status').innerText = "สถานะ: ส่งข้อความแล้ว 💬";
+            
+            // เคลียร์ช่องพิมพ์
+            document.getElementById('textMsg').value = "";
         }
 
         // --- Shortcuts ---
         document.addEventListener("keydown", (e) => {
-            if (document.activeElement.tagName === "INPUT") return;
+            if (isTextMode && e.key === "Enter") {
+                e.preventDefault();
+                handleSendText();
+            }
+            // ถ้าอยู่ในช่องพิมพ์เลขหรือข้อความ ไม่ต้องกด Space/R
+            if (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA") return;
 
-            if (e.key === " ") {
-                e.preventDefault(); 
-                handleStart();
-            }
-            if (e.key === "r" || e.key === "R") {
-                handleReset();
-            }
-            if (e.key === "s" || e.key === "S") {
-                handleStop();
+            if (!isTextMode) {
+                if (e.key === " ") { e.preventDefault(); handleStart(); }
+                if (e.key === "r" || e.key === "R") { handleReset(); }
             }
         });
-
-        // Init
-        updateDurationFromInput();
     </script>
 </body>
 </html>
-
